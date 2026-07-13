@@ -1,9 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { getReadyMessage } from './index.js';
+const runCliMock = vi.fn<(argv: string[]) => Promise<number>>();
 
-describe('getReadyMessage', (): void => {
-  it('returns the current CLI foundation message', (): void => {
-    expect(getReadyMessage()).toBe('spec-it CLI foundation is ready.\n');
+vi.mock('./cli.js', () => {
+  return {
+    runCli: runCliMock,
+  };
+});
+
+describe('main', (): void => {
+  it('delegates argv to runCli', async (): Promise<void> => {
+    runCliMock.mockResolvedValueOnce(0);
+
+    const { main } = await import('./index.js');
+
+    const exitCode = await main(['--help']);
+
+    expect(exitCode).toBe(0);
+    expect(runCliMock).toHaveBeenCalledWith(['--help']);
   });
 });

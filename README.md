@@ -64,6 +64,8 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn build` emits runnable output to `dist/`
 - `yarn start` runs the built output
 - `yarn start:dev` runs the source entrypoint directly during development
+- the CLI now uses `cac` as its command-line foundation
+- `yarn start -- --help` shows the current CLI help output
 
 ## Tests
 

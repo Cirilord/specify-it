@@ -1,13 +1,17 @@
+#!/usr/bin/env node
+
 import { fileURLToPath } from 'node:url';
 
-export function getReadyMessage(): string {
-  return 'spec-it CLI foundation is ready.\n';
-}
+import { runCli } from './cli.js';
 
-export function main(): void {
-  process.stdout.write(getReadyMessage());
+export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+  return runCli(argv);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main();
+  const exitCode = await main();
+
+  if (exitCode !== 0) {
+    process.exitCode = exitCode;
+  }
 }
