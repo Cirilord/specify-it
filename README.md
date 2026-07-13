@@ -33,12 +33,15 @@ The repository uses a small Node-based tooling stack for deterministic local che
 - `Prettier` handles formatting for repository files
 - `commitlint` enforces the documented `type(scope): message` commit format
 - `lefthook` runs the selected checks during the local Git workflow
+- `TypeScript` powers the initial source entrypoint and build flow
 
 Install dependencies with `yarn install`.
 
 Common commands:
 
 - `yarn build`
+- `yarn start`
+- `yarn start:dev`
 - `yarn format`
 - `yarn format:check`
 - `yarn lint`
@@ -51,6 +54,15 @@ Local hooks:
 
 - `pre-commit` runs `lint` and `format:check`
 - `commit-msg` runs `commit-lint`
+
+## Source
+
+The project now uses `src/index.ts` as the initial TypeScript entrypoint.
+
+- `yarn type-check` validates the source tree without emitting files
+- `yarn build` emits runnable output to `dist/`
+- `yarn start` runs the built output
+- `yarn start:dev` runs the source entrypoint directly during development
 
 ## Workflow
 

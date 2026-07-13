@@ -7,7 +7,7 @@ import globals from 'globals';
 /** @type {import('eslint').Linter.Config[]} */
 const config = [
   {
-    ignores: ['**/node_modules/**'],
+    ignores: ['**/dist/**', '**/node_modules/**'],
   },
   js.configs.recommended,
   eslintPluginPrettierRecommended,
