@@ -5,3 +5,9 @@ node_modules
 
 # Build output
 dist
+
+# Test coverage
+coverage
+
+# Misc
+.DS_Store

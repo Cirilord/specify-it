@@ -47,6 +47,7 @@ Common commands:
 - `yarn lint`
 - `yarn lint:check`
 - `yarn test`
+- `yarn test:cov`
 - `yarn type-check`
 - `yarn commit-lint --edit .git/COMMIT_EDITMSG`
 
@@ -63,6 +64,13 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn build` emits runnable output to `dist/`
 - `yarn start` runs the built output
 - `yarn start:dev` runs the source entrypoint directly during development
+
+## Tests
+
+Vitest is the current unit test runner for the project.
+
+- `yarn test` runs the unit test suite
+- `yarn test:cov` runs the suite with coverage enabled
 
 ## Workflow
 

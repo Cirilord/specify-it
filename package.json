@@ -14,19 +14,20 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
-    "test": "node --eval \"\"",
-    "test:cov": "node --eval \"\"",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
     "test:e2e": "node --eval \"\"",
     "prepare": "lefthook install || true",
     "commit-lint": "commitlint",
     "type-check": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
-    "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^24.0.15",
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.31.0",
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^24.0.15",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
@@ -35,6 +36,7 @@
     "lefthook": "^1.11.16",
     "prettier": "^3.6.2",
     "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.9"
   }
 }
