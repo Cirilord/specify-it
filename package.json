@@ -1,0 +1,36 @@
+{
+  "name": "spec-it",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI and validation tooling for spec-driven workflows.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "scripts": {
+    "build": "node --eval \"\"",
+    "start": "node --eval \"\"",
+    "start:dev": "node --eval \"\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "test": "node --eval \"\"",
+    "test:cov": "node --eval \"\"",
+    "test:e2e": "node --eval \"\"",
+    "prepare": "lefthook install || true",
+    "commit-lint": "commitlint",
+    "type-check": "node --eval \"\""
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@eslint/js": "^9.31.0",
+    "eslint": "^9.31.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.3.0",
+    "lefthook": "^1.11.16",
+    "prettier": "^3.6.2"
+  }
+}

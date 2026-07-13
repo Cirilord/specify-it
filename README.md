@@ -25,6 +25,33 @@ The project should treat deterministic checks and LLM-assisted reasoning as comp
 - `IDEA.md` captures early-stage product direction and open questions
 - `.specs/` stores implementation-ready and approved specs
 
+## Tooling
+
+The repository uses a small Node-based tooling stack for deterministic local checks.
+
+- `ESLint` validates JavaScript and configuration files
+- `Prettier` handles formatting for repository files
+- `commitlint` enforces the documented `type(scope): message` commit format
+- `lefthook` runs the selected checks during the local Git workflow
+
+Install dependencies with `yarn install`.
+
+Common commands:
+
+- `yarn build`
+- `yarn format`
+- `yarn format:check`
+- `yarn lint`
+- `yarn lint:check`
+- `yarn test`
+- `yarn type-check`
+- `yarn commit-lint --edit .git/COMMIT_EDITMSG`
+
+Local hooks:
+
+- `pre-commit` runs `lint` and `format:check`
+- `commit-msg` runs `commit-lint`
+
 ## Workflow
 
 Implementation work should follow this order:
