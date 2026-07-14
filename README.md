@@ -49,6 +49,7 @@ Common commands:
 - `yarn test`
 - `yarn test:cov`
 - `yarn type-check`
+- `yarn release`
 - `yarn commit-lint --edit .git/COMMIT_EDITMSG`
 
 Local hooks:
@@ -123,6 +124,35 @@ Field overview:
 | `checks.requireKnownExtension`     | `true`   | requires spec files to match the configured format                                                                                                                                                      |
 | `checks.commitSpecs.mode`          | `true`   | describes commit-level expectations for specs; planned values are `none`, `one`, and `any`                                                                                                              |
 | `checks.commitSpecs.requireLatest` | `true`   | expresses whether a newly added spec in a commit must be the latest spec in `.specs/` by timestamp order                                                                                                |
+
+## Release
+
+The repository is prepared for manual releases with `release-it`.
+
+- `yarn release` is the local release entrypoint.
+- `.release-it.json` defines the release strategy for Git tags, npm publishing, GitHub releases, and conventional changelog generation.
+- `.github/workflows/release.yml` defines a manual GitHub Actions release workflow with `patch`, `minor`, and `major` version increments.
+- the workflow uses the built-in `GITHUB_TOKEN` provided by GitHub Actions
+- the repository must define `NPM_TOKEN` as a GitHub Actions secret before npm publication can succeed
+- the workflow writes npm authentication explicitly into the npm config file used by the runner before running `release-it` so npm validation and publish steps share the same credentials
+- `release-it` skips its redundant npm preflight auth checks because the workflow already verifies npm authentication explicitly with `npm whoami`
+- the package manifest pins npm publication to `https://registry.npmjs.org/` so releases do not inherit an unintended registry from the Yarn environment
+
+The release workflow runs these quality gates before creating a release:
+
+- `yarn format:check`
+- `yarn lint:check`
+- `yarn type-check`
+- `yarn test`
+- `yarn build`
+
+The package is prepared for public npm publication by:
+
+- publishing built files from `dist/`
+- exposing `dist/index.js` as the package entrypoint
+- exposing `dist/index.d.ts` as the package type definition entrypoint
+- exposing the CLI binary through the npm-compatible named `bin` manifest form
+- publishing `README.md` and `LICENSE` alongside the built output
 
 ## Tests
 

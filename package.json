@@ -1,16 +1,33 @@
 {
   "name": "spec-it",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.0",
   "description": "CLI and validation tooling for spec-driven workflows.",
   "license": "MIT",
   "type": "module",
   "packageManager": "yarn@1.22.22",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "bin": {
-    "spec-it": "./dist/index.js"
+    "spec-it": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "prebuild": "rimraf dist",
+    "build": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
     "start:dev": "node --import tsx src/index.ts",
     "format": "prettier --write .",
@@ -20,11 +37,14 @@
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
     "test:e2e": "node --eval \"\"",
+    "release": "release-it",
+    "release:version": "release-it --only-version",
     "prepare": "lefthook install || true",
     "commit-lint": "commitlint",
     "type-check": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^10.0.1",
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.31.0",
@@ -38,6 +58,8 @@
     "globals": "^16.3.0",
     "lefthook": "^1.11.16",
     "prettier": "^3.6.2",
+    "release-it": "^19.0.4",
+    "rimraf": "^6.0.1",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.48.1",
