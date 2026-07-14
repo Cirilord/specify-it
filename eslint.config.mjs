@@ -1,30 +1,62 @@
-import js from '@eslint/js';
+import eslint from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-/** @type {import('eslint').Linter.Config[]} */
-const config = [
+const config = defineConfig(
   {
-    ignores: ['**/dist/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'commitlint.config.mjs',
+      'eslint.config.mjs',
+      'prettier.config.mjs',
+      'vitest.config.mjs',
+    ],
   },
-  js.configs.recommended,
+  eslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
   eslintConfigPrettier,
   {
-    files: ['**/*.{js,mjs,cjs}'],
+    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       globals: {
         ...globals.node,
       },
       sourceType: 'module',
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
       import: importPlugin,
     },
     rules: {
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          fixStyle: 'inline-type-imports',
+          prefer: 'type-imports',
+        },
+      ],
+      '@typescript-eslint/explicit-function-return-type': 'error',
+      '@typescript-eslint/explicit-member-accessibility': ['error', { accessibility: 'explicit' }],
+      '@typescript-eslint/member-ordering': [
+        'error',
+        {
+          default: {
+            order: 'alphabetically',
+          },
+        },
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/prefer-readonly': 'error',
       'sort-imports': [
         'error',
         {
@@ -53,7 +85,7 @@ const config = [
     languageOptions: {
       sourceType: 'commonjs',
     },
-  },
-];
+  }
+);
 
 export default config;

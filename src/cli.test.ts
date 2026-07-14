@@ -1,11 +1,10 @@
-import { spawnSync } from 'node:child_process';
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
 import { createCli } from './cli.js';
 
-function runCliProcess(args: string[]) {
+function runCliProcess(args: string[]): SpawnSyncReturns<string> {
   return spawnSync(process.execPath, ['--import', 'tsx', path.resolve('src/index.ts'), ...args], {
     cwd: process.cwd(),
     encoding: 'utf8',
