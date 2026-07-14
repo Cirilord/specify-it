@@ -66,6 +66,63 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn start:dev` runs the source entrypoint directly during development
 - the CLI now uses `cac` as its command-line foundation
 - `yarn start -- --help` shows the current CLI help output
+- `yarn start -- init` bootstraps `.specs/` and `spec-it.config.json`
+- `yarn start -- init --bare` creates only the minimum structure
+- `yarn start -- init --format=json` changes the generated spec example format
+
+The first CLI command is `spec-it init`.
+
+## Config
+
+`spec-it init` generates a `spec-it.config.json` file that describes the repository spec contract.
+
+Example:
+
+```json
+{
+  "specs": {
+    "root": ".specs",
+    "format": "md",
+    "language": "en",
+    "naming": "timestamp-slug",
+    "sections": {
+      "order": ["Title", "Objective", "Scope", "Design", "Examples", "Acceptance Criteria"],
+      "required": ["Objective", "Scope", "Design", "Acceptance Criteria"],
+      "optional": ["Examples"]
+    }
+  },
+  "agents": {
+    "syncDocuments": ["AGENTS.md", "README.md"]
+  },
+  "checks": {
+    "requireSpecsDirectory": true,
+    "requireOrderedSections": true,
+    "requireKnownExtension": true,
+    "commitSpecs": {
+      "mode": "any",
+      "requireLatest": true
+    }
+  }
+}
+```
+
+Field overview:
+
+| path                               | required | description                                                                                                                                                                                             |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `specs.root`                       | `true`   | defines where repository specs live                                                                                                                                                                     |
+| `specs.format`                     | `true`   | defines the single source of truth for the project spec format; current bootstrap values are `md`, `json`, `html`, and `xml`                                                                            |
+| `specs.language`                   | `true`   | communicates the expected language for LLM-authored specs                                                                                                                                               |
+| `specs.naming`                     | `true`   | defines the filename strategy for specs; supported values are `timestamp-slug`, `slug`, `sequence-slug`, `date-slug`, `datetime-slug`, `group-timestamp-slug`, `timestamp-group-slug`, and `group-slug` |
+| `specs.sections.order`             | `true`   | defines the canonical section order for markdown-style specs                                                                                                                                            |
+| `specs.sections.required`          | `true`   | lists sections that must exist in every compliant spec                                                                                                                                                  |
+| `specs.sections.optional`          | `true`   | lists sections that may be omitted                                                                                                                                                                      |
+| `agents.syncDocuments`             | `true`   | lists repository documents that should stay aligned with spec and workflow changes                                                                                                                      |
+| `checks.requireSpecsDirectory`     | `true`   | requires the configured specs directory to exist                                                                                                                                                        |
+| `checks.requireOrderedSections`    | `true`   | requires specs to follow the configured section order                                                                                                                                                   |
+| `checks.requireKnownExtension`     | `true`   | requires spec files to match the configured format                                                                                                                                                      |
+| `checks.commitSpecs.mode`          | `true`   | describes commit-level expectations for specs; planned values are `none`, `one`, and `any`                                                                                                              |
+| `checks.commitSpecs.requireLatest` | `true`   | expresses whether a newly added spec in a commit must be the latest spec in `.specs/` by timestamp order                                                                                                |
 
 ## Tests
 
