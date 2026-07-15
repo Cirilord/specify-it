@@ -1,0 +1,388 @@
+import { readdir, readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { z } from 'zod';
+
+const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
+const SUPPORTED_SPEC_NAMINGS = [
+  'timestamp-slug',
+  'slug',
+  'sequence-slug',
+  'date-slug',
+  'datetime-slug',
+  'group-timestamp-slug',
+  'timestamp-group-slug',
+  'group-slug',
+] as const;
+const CONFIG_FILE_NAME = 'specify-it.config.json';
+const BOOTSTRAP_SPEC_FILE_BASENAME = '00000000000000_initial_spec_example';
+const TIMESTAMP_SLUG_NAMING = 'timestamp-slug';
+
+type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
+type SpecNaming = (typeof SUPPORTED_SPEC_NAMINGS)[number];
+
+type CheckResult = {
+  errors: string[];
+};
+
+type SpecsConfig = {
+  format: SpecFormat;
+  groups: string[] | undefined;
+  naming: SpecNaming;
+  root: string;
+  sections: {
+    optional: string[];
+    order: string[];
+    required: string[];
+  };
+};
+
+type ChecksConfig = {
+  requireKnownExtension: boolean;
+  requireOrderedSections: boolean;
+  requireSpecsDirectory: boolean;
+};
+
+type RepositoryConfig = {
+  checks: ChecksConfig;
+  specs: SpecsConfig;
+};
+
+type SpecFile = {
+  absolutePath: string;
+  displayPath: string;
+  group: string | undefined;
+};
+
+const groupSchema = z.string().trim().min(1);
+
+const configSchema = z.object({
+  checks: z.object({
+    requireKnownExtension: z.boolean(),
+    requireOrderedSections: z.boolean(),
+    requireSpecsDirectory: z.boolean(),
+  }),
+  specs: z.object({
+    format: z.enum(SUPPORTED_SPEC_FORMATS),
+    groups: z.array(groupSchema).min(1).optional(),
+    naming: z.enum(SUPPORTED_SPEC_NAMINGS),
+    root: z.string().trim().min(1),
+    sections: z.object({
+      optional: z.array(z.string().trim().min(1)),
+      order: z.array(z.string().trim().min(1)).min(1),
+      required: z.array(z.string().trim().min(1)),
+    }),
+  }),
+});
+
+export class CheckCommand {
+  public readonly cwd: string | undefined;
+
+  private constructor(cwd: string | undefined) {
+    this.cwd = cwd;
+  }
+
+  public static fromCliOptions(options: unknown): CheckCommand {
+    if (options !== undefined && (typeof options !== 'object' || options === null)) {
+      throw new Error('Invalid check options.');
+    }
+
+    return new CheckCommand(undefined);
+  }
+
+  public static getSummary(result: CheckResult): string {
+    if (result.errors.length === 0) {
+      return ['specify-it check complete.', 'Repository passed validation.', ''].join('\n');
+    }
+
+    return [...result.errors, ''].join('\n');
+  }
+
+  public async run(): Promise<CheckResult> {
+    const cwd = this.cwd ?? process.cwd();
+    const config = await this.loadConfig(cwd);
+    const errors: string[] = [];
+    const specsRootPath = path.join(cwd, config.specs.root);
+    const specsRootExists = await this.pathExists(specsRootPath);
+
+    if (config.checks.requireSpecsDirectory && !specsRootExists) {
+      errors.push(`Missing specs directory: ${config.specs.root}`);
+      return { errors };
+    }
+
+    if (!specsRootExists) {
+      return { errors };
+    }
+
+    if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
+      errors.push(
+        `Unsupported spec naming for check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
+      );
+      return { errors };
+    }
+
+    const specFiles = await this.collectSpecFiles(cwd, specsRootPath, config.specs.groups, errors);
+    await Promise.all(
+      specFiles.map(async (specFile) => {
+        const fileErrors = await this.validateSpecFile(specFile, config);
+        errors.push(...fileErrors);
+      })
+    );
+
+    return { errors };
+  }
+
+  private async collectSpecFiles(
+    cwd: string,
+    specsRootPath: string,
+    groups: string[] | undefined,
+    errors: string[]
+  ): Promise<SpecFile[]> {
+    const directoryEntries = await readdir(specsRootPath, { withFileTypes: true });
+    const specFiles: SpecFile[] = [];
+
+    for (const entry of directoryEntries) {
+      if (entry.name.startsWith('.')) {
+        continue;
+      }
+
+      const entryPath = path.join(specsRootPath, entry.name);
+
+      if (groups === undefined) {
+        if (entry.isDirectory()) {
+          errors.push(
+            `Invalid spec path: ${this.toDisplayPath(cwd, entryPath)} must not be nested when specs.groups is not configured.`
+          );
+          continue;
+        }
+
+        specFiles.push({
+          absolutePath: entryPath,
+          displayPath: this.toDisplayPath(cwd, entryPath),
+          group: undefined,
+        });
+        continue;
+      }
+
+      if (!entry.isDirectory()) {
+        errors.push(
+          `Invalid spec path: ${this.toDisplayPath(cwd, entryPath)} must be inside one of the configured group directories.`
+        );
+        continue;
+      }
+
+      if (!groups.includes(entry.name)) {
+        errors.push(
+          `Invalid spec group directory: ${this.toDisplayPath(cwd, entryPath)} is not one of: ${groups.join(', ')}`
+        );
+        continue;
+      }
+
+      const groupEntries = await readdir(entryPath, { withFileTypes: true });
+
+      for (const groupEntry of groupEntries) {
+        if (groupEntry.name.startsWith('.')) {
+          continue;
+        }
+
+        const groupEntryPath = path.join(entryPath, groupEntry.name);
+
+        if (groupEntry.isDirectory()) {
+          errors.push(
+            `Invalid spec path: ${this.toDisplayPath(cwd, groupEntryPath)} must live directly under the configured group directory.`
+          );
+          continue;
+        }
+
+        specFiles.push({
+          absolutePath: groupEntryPath,
+          displayPath: this.toDisplayPath(cwd, groupEntryPath),
+          group: entry.name,
+        });
+      }
+    }
+
+    return specFiles;
+  }
+
+  private findDuplicates(values: string[]): string[] {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+
+    for (const value of values) {
+      if (seen.has(value)) {
+        duplicates.add(value);
+        continue;
+      }
+
+      seen.add(value);
+    }
+
+    return [...duplicates];
+  }
+
+  private isTimestampSlugFileName(fileName: string, format: SpecFormat): boolean {
+    if (fileName === `${BOOTSTRAP_SPEC_FILE_BASENAME}.${format}`) {
+      return true;
+    }
+
+    const pattern = new RegExp(`^\\d{14}_[a-z0-9]+(?:-[a-z0-9]+)*\\.${format}$`, 'u');
+    return pattern.test(fileName);
+  }
+
+  private async loadConfig(cwd: string): Promise<RepositoryConfig> {
+    const configFilePath = path.join(cwd, CONFIG_FILE_NAME);
+
+    let fileContent: string;
+    try {
+      fileContent = await readFile(configFilePath, 'utf8');
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        throw new Error(`Could not find ${CONFIG_FILE_NAME} in ${cwd}.`);
+      }
+
+      throw error;
+    }
+
+    let parsedConfig: unknown;
+    try {
+      parsedConfig = JSON.parse(fileContent);
+    } catch {
+      throw new Error(`Invalid ${CONFIG_FILE_NAME}. Expected valid JSON.`);
+    }
+
+    try {
+      const config = configSchema.parse(parsedConfig);
+
+      return {
+        checks: config.checks,
+        specs: {
+          format: config.specs.format,
+          groups: config.specs.groups,
+          naming: config.specs.naming,
+          root: config.specs.root,
+          sections: config.specs.sections,
+        },
+      };
+    } catch {
+      throw new Error(`Invalid ${CONFIG_FILE_NAME}.`);
+    }
+  }
+
+  private async pathExists(targetPath: string): Promise<boolean> {
+    try {
+      await stat(targetPath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private toDisplayPath(basePath: string, targetPath: string): string {
+    return path.relative(basePath, targetPath) || targetPath;
+  }
+
+  private validateMarkdownStructure(
+    displayPath: string,
+    content: string,
+    sections: SpecsConfig['sections'],
+    options: { requireOrderedSections: boolean }
+  ): string[] {
+    const errors: string[] = [];
+    const lines = content.split(/\r?\n/u);
+    const headings = lines
+      .map((line, index) => ({ index, line: line.trim() }))
+      .filter(({ line }) => line.startsWith('#'));
+
+    const titleHeadings = headings.filter(({ line }) => /^#\s+\S/u.test(line));
+    if (titleHeadings.length === 0) {
+      errors.push(`Missing title heading: ${displayPath} must start with a "# ..." heading.`);
+      return errors;
+    }
+    if (titleHeadings[0]?.index !== lines.findIndex((line) => line.trim().length > 0)) {
+      errors.push(`Invalid title position: ${displayPath} must start with the title heading.`);
+    }
+    if (titleHeadings.length > 1) {
+      errors.push(`Invalid title heading: ${displayPath} must contain only one top-level title.`);
+    }
+
+    const sectionHeadings = headings
+      .filter(({ line }) => /^##\s+\S/u.test(line))
+      .map(({ line }) => line.replace(/^##\s+/u, ''));
+    const allowedSections = new Set(sections.order.filter((section) => section !== 'Title'));
+    for (const sectionHeading of sectionHeadings) {
+      if (!allowedSections.has(sectionHeading)) {
+        errors.push(
+          `Invalid section heading: ${displayPath} contains unsupported section "${sectionHeading}".`
+        );
+      }
+    }
+
+    const duplicateSections = this.findDuplicates(sectionHeadings);
+    for (const duplicateSection of duplicateSections) {
+      errors.push(
+        `Duplicate section heading: ${displayPath} contains "${duplicateSection}" more than once.`
+      );
+    }
+
+    const presentSections = new Set(sectionHeadings);
+    for (const requiredSection of sections.required) {
+      if (requiredSection === 'Title') {
+        continue;
+      }
+
+      if (!presentSections.has(requiredSection)) {
+        errors.push(
+          `Missing required section: ${displayPath} must include "## ${requiredSection}".`
+        );
+      }
+    }
+
+    if (options.requireOrderedSections) {
+      const expectedOrder = sections.order.filter((section) => section !== 'Title');
+      const actualOrder = sectionHeadings.filter((section) => allowedSections.has(section));
+      let previousIndex = -1;
+
+      for (const sectionHeading of actualOrder) {
+        const currentIndex = expectedOrder.indexOf(sectionHeading);
+
+        if (currentIndex < previousIndex) {
+          errors.push(
+            `Invalid section order: ${displayPath} does not follow the configured section order.`
+          );
+          break;
+        }
+
+        previousIndex = currentIndex;
+      }
+    }
+
+    return errors;
+  }
+
+  private async validateSpecFile(specFile: SpecFile, config: RepositoryConfig): Promise<string[]> {
+    const errors: string[] = [];
+    const extension = path.extname(specFile.absolutePath);
+    const expectedExtension = `.${config.specs.format}`;
+
+    if (config.checks.requireKnownExtension && extension !== expectedExtension) {
+      errors.push(`Invalid spec extension: ${specFile.displayPath} must use ${expectedExtension}.`);
+    }
+
+    if (!this.isTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)) {
+      errors.push(
+        `Invalid spec filename: ${specFile.displayPath} must match YYYYMMDDHHMMSS_slug${expectedExtension}.`
+      );
+    }
+
+    if (config.specs.format === 'md') {
+      const content = await readFile(specFile.absolutePath, 'utf8');
+      errors.push(
+        ...this.validateMarkdownStructure(specFile.displayPath, content, config.specs.sections, {
+          requireOrderedSections: config.checks.requireOrderedSections,
+        })
+      );
+    }
+
+    return errors;
+  }
+}

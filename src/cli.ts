@@ -1,10 +1,11 @@
 import { cac } from 'cac';
 
 import packageJson from '../package.json' with { type: 'json' };
+import { CheckCommand } from './commands/check.js';
 import { InitCommand } from './commands/init.js';
 import { NewCommand } from './commands/new.js';
 
-const SUPPORTED_COMMANDS = new Set(['init', 'new']);
+const SUPPORTED_COMMANDS = new Set(['check', 'init', 'new']);
 
 export function createCli(): ReturnType<typeof cac> {
   const cli = cac('specify-it');
@@ -15,6 +16,20 @@ export function createCli(): ReturnType<typeof cac> {
     .usage('[options]')
     .example('specify-it')
     .example('specify-it --help');
+
+  cli
+    .command('check', 'Validate repository specs against the repository configuration')
+    .example('specify-it check')
+    .action(async (options) => {
+      const command = CheckCommand.fromCliOptions(options);
+      const result = await command.run();
+
+      console.info(CheckCommand.getSummary(result));
+
+      if (result.errors.length > 0) {
+        process.exitCode = 1;
+      }
+    });
 
   cli
     .command('init', 'Bootstrap specify-it in the current project')
@@ -49,6 +64,7 @@ export function createCli(): ReturnType<typeof cac> {
 export async function runCli(argv: string[]): Promise<number> {
   const cli = createCli();
   cli.parse(['node', 'specify-it', ...argv], { run: false });
+  process.exitCode = undefined;
 
   try {
     if (argv.length === 0) {
@@ -63,7 +79,7 @@ export async function runCli(argv: string[]): Promise<number> {
     }
 
     await cli.runMatchedCommand();
-    return 0;
+    return process.exitCode ?? 0;
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Unknown CLI error');
     return 1;

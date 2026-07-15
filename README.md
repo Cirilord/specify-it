@@ -70,10 +70,12 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn start -- init` bootstraps `.specs/` and `specify-it.config.json`
 - `yarn start -- init --bare` creates only the minimum structure
 - `yarn start -- init --format=json` changes the generated spec example format
+- `yarn start -- check` validates repository specs against the repository configuration
 - `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
 - `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
 
 The first implemented CLI commands are `specify-it init` and `specify-it new`.
+The first implemented CLI commands are `specify-it init`, `specify-it new`, and `specify-it check`.
 
 ## Config
 
@@ -165,6 +167,23 @@ For grouped repositories, `specs.groups` is expected to use this shape:
     "groups": ["feat", "fix", "docs", "chore"]
   }
 }
+```
+
+## Check Specs
+
+`specify-it check` validates repository specs against `specify-it.config.json`.
+
+- the first version uses `specs.root`, `specs.groups`, and `checks.requireSpecsDirectory` to validate repository structure
+- the first version validates file extensions when `checks.requireKnownExtension` is enabled
+- the first version validates filenames only for `specs.naming = "timestamp-slug"`
+- the first version validates Markdown title and section structure using `specs.sections.*` and `checks.requireOrderedSections`
+- the first version reports all discovered structural validation errors from the current run
+- the first version does not implement commit-aware validation or `checks.commitSpecs.*`
+
+Example:
+
+```bash
+specify-it check
 ```
 
 ## Release

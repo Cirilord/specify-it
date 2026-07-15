@@ -1,5 +1,5 @@
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,6 +58,7 @@ describe('CLI process', (): void => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Usage:');
+    expect(result.stdout).toContain('specify-it check');
     expect(result.stdout).toContain('specify-it init');
     expect(result.stdout).toContain('specify-it new');
   });
@@ -85,6 +86,98 @@ describe('CLI process', (): void => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('specify-it init complete.');
     expect(result.stdout).toContain('.specs');
+  });
+
+  it('runs check through the CLI', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireKnownExtension: true,
+            requireOrderedSections: true,
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'timestamp-slug',
+            root: '.specs',
+            sections: {
+              optional: ['Examples'],
+              order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+              required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+            },
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      [
+        '# Bootstrap Release Workflow',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    const result = runCliProcess(['check'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('specify-it check complete.');
+    expect(result.stdout).toContain('Repository passed validation.');
+  });
+
+  it('returns a non-zero exit code when check finds validation errors', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireKnownExtension: true,
+            requireOrderedSections: true,
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'timestamp-slug',
+            root: '.specs',
+            sections: {
+              optional: ['Examples'],
+              order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+              required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+            },
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(path.join(cwd, '.specs/invalid.md'), '# Invalid\n', 'utf8');
+
+    const result = runCliProcess(['check'], cwd);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('Invalid spec filename');
   });
 
   it('returns an error when new is missing the title flag', async (): Promise<void> => {
