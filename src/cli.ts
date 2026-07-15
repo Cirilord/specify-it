@@ -2,6 +2,9 @@ import { cac } from 'cac';
 
 import packageJson from '../package.json' with { type: 'json' };
 import { InitCommand } from './commands/init.js';
+import { NewCommand } from './commands/new.js';
+
+const SUPPORTED_COMMANDS = new Set(['init', 'new']);
 
 export function createCli(): ReturnType<typeof cac> {
   const cli = cac('specify-it');
@@ -27,6 +30,19 @@ export function createCli(): ReturnType<typeof cac> {
       console.info(InitCommand.getSummary(result));
     });
 
+  cli
+    .command('new', 'Create a new spec scaffold from the repository configuration')
+    .option('--group <group>', 'Select the configured spec group')
+    .option('--title <title>', 'Set the spec title')
+    .example('specify-it new --title="bootstrap release workflow"')
+    .example('specify-it new --title="add config loader" --group=feat')
+    .action(async (options) => {
+      const command = NewCommand.fromCliOptions(options);
+      const result = await command.run();
+
+      console.info(NewCommand.getSummary(result));
+    });
+
   return cli;
 }
 
@@ -40,7 +56,7 @@ export async function runCli(argv: string[]): Promise<number> {
       return 0;
     }
 
-    if (argv[0] !== 'init' && !argv[0]?.startsWith('-')) {
+    if (!SUPPORTED_COMMANDS.has(argv[0] ?? '') && !argv[0]?.startsWith('-')) {
       cli.outputHelp();
       console.error(`Unknown command: ${argv[0]}`);
       return 1;

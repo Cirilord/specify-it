@@ -1,5 +1,5 @@
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,6 +59,7 @@ describe('CLI process', (): void => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Usage:');
     expect(result.stdout).toContain('specify-it init');
+    expect(result.stdout).toContain('specify-it new');
   });
 
   it('returns an error for an unknown command', (): void => {
@@ -84,5 +85,52 @@ describe('CLI process', (): void => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('specify-it init complete.');
     expect(result.stdout).toContain('.specs');
+  });
+
+  it('returns an error when new is missing the title flag', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    const result = runCliProcess(['new'], cwd);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Missing required title. Use --title "<title>".');
+  });
+
+  it('runs new through the CLI', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          specs: {
+            format: 'md',
+            naming: 'timestamp-slug',
+            root: '.specs',
+            sections: {
+              order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+            },
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+
+    const result = runCliProcess(['new', '--title=Bootstrap Release Workflow'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('specify-it new complete.');
+    expect(result.stdout).toContain('.specs/');
+
+    const createdFiles = await readdir(path.join(cwd, '.specs'));
+    const createdFileName = createdFiles.find((fileName) =>
+      /^20\d{12}_bootstrap-release-workflow\.md$/.test(fileName)
+    );
+    const createdSpec = await readFile(path.join(cwd, '.specs', createdFileName ?? ''), 'utf8');
+
+    expect(createdFileName).toBeDefined();
+    expect(createdSpec).toContain('# Bootstrap Release Workflow');
   });
 });

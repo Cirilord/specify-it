@@ -70,8 +70,10 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn start -- init` bootstraps `.specs/` and `specify-it.config.json`
 - `yarn start -- init --bare` creates only the minimum structure
 - `yarn start -- init --format=json` changes the generated spec example format
+- `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
+- `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
 
-The first CLI command is `specify-it init`.
+The first implemented CLI commands are `specify-it init` and `specify-it new`.
 
 ## Config
 
@@ -107,6 +109,16 @@ Example:
 }
 ```
 
+Grouped repositories may extend the config with an optional `specs.groups` list:
+
+```json
+{
+  "specs": {
+    "groups": ["feat", "fix", "docs", "chore"]
+  }
+}
+```
+
 Field overview:
 
 | path                               | required | description                                                                                                                                                                                             |
@@ -115,6 +127,7 @@ Field overview:
 | `specs.format`                     | `true`   | defines the single source of truth for the project spec format; current bootstrap values are `md`, `json`, `html`, and `xml`                                                                            |
 | `specs.language`                   | `true`   | communicates the expected language for LLM-authored specs                                                                                                                                               |
 | `specs.naming`                     | `true`   | defines the filename strategy for specs; supported values are `timestamp-slug`, `slug`, `sequence-slug`, `date-slug`, `datetime-slug`, `group-timestamp-slug`, `timestamp-group-slug`, and `group-slug` |
+| `specs.groups`                     | `false`  | optionally lists the allowed spec groups; when present, `specify-it new` requires `--group` with one of the configured values                                                                           |
 | `specs.sections.order`             | `true`   | defines the canonical section order for markdown-style specs                                                                                                                                            |
 | `specs.sections.required`          | `true`   | lists sections that must exist in every compliant spec                                                                                                                                                  |
 | `specs.sections.optional`          | `true`   | lists sections that may be omitted                                                                                                                                                                      |
@@ -124,6 +137,35 @@ Field overview:
 | `checks.requireKnownExtension`     | `true`   | requires spec files to match the configured format                                                                                                                                                      |
 | `checks.commitSpecs.mode`          | `true`   | describes commit-level expectations for specs; planned values are `none`, `one`, and `any`                                                                                                              |
 | `checks.commitSpecs.requireLatest` | `true`   | expresses whether a newly added spec in a commit must be the latest spec in `.specs/` by timestamp order                                                                                                |
+
+## New Specs
+
+`specify-it new` scaffolds a new spec from the repository configuration.
+
+- the first version requires `--title`
+- the first version only scaffolds Markdown specs
+- the first version only supports `specs.naming = "timestamp-slug"`
+- the command reads `specify-it.config.json` from the current repository root
+- `specs.groups` is optional
+- when `specs.groups` is not configured, the spec is created directly under `specs.root`
+- when `specs.groups` is configured, the command requires `--group` and validates it against the configured list
+
+Example:
+
+```bash
+specify-it new --title="bootstrap release workflow"
+specify-it new --title="add config loader" --group=feat
+```
+
+For grouped repositories, `specs.groups` is expected to use this shape:
+
+```json
+{
+  "specs": {
+    "groups": ["feat", "fix", "docs", "chore"]
+  }
+}
+```
 
 ## Release
 
