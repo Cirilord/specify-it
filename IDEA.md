@@ -1,4 +1,4 @@
-# spec-it Idea
+# specify-it Idea
 
 ## Vision
 
@@ -14,9 +14,9 @@ Build a library and CLI that makes spec-driven development portable, enforceable
 
 ## Initial Capabilities
 
-- `spec-it init` to create the project folder structure and configuration file
-- `spec-it new` to scaffold a spec document from project rules
-- `spec-it check` to validate file path, filename, format, and document structure
+- `specify-it init` to create the project folder structure and configuration file
+- `specify-it new` to scaffold a spec document from project rules
+- `specify-it check` to validate file path, filename, format, and document structure
 - future deterministic commands should parse specs, list specs, and report code-to-spec change context without semantic interpretation
 - local hook and CI integration for enforcement
 
@@ -26,7 +26,7 @@ Deterministic commands should answer structural questions such as whether a spec
 
 Agent-facing skills should answer semantic questions such as whether an implementation still matches an approved spec, whether a spec should be updated to reflect an intentional code change, and which side should be treated as the source of truth when divergence is discovered.
 
-This separation should let `spec-it` remain useful in CI and Git hooks while still supporting assisted review and refinement workflows with LLMs.
+This separation should let `specify-it` remain useful in CI and Git hooks while still supporting assisted review and refinement workflows with LLMs.
 
 ## Open Questions
 

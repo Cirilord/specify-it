@@ -1,5 +1,5 @@
 {
-  "name": "spec-it",
+  "name": "specify-it",
   "version": "0.0.0",
   "description": "CLI and validation tooling for spec-driven workflows.",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bin": {
-    "spec-it": "dist/index.js"
+    "specify-it": "dist/index.js"
   },
   "scripts": {
     "prebuild": "rimraf dist",

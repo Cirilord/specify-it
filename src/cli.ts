@@ -4,22 +4,22 @@ import packageJson from '../package.json' with { type: 'json' };
 import { InitCommand } from './commands/init.js';
 
 export function createCli(): ReturnType<typeof cac> {
-  const cli = cac('spec-it');
+  const cli = cac('specify-it');
 
   cli
     .version(packageJson.version)
     .help()
     .usage('[options]')
-    .example('spec-it')
-    .example('spec-it --help');
+    .example('specify-it')
+    .example('specify-it --help');
 
   cli
-    .command('init', 'Bootstrap spec-it in the current project')
+    .command('init', 'Bootstrap specify-it in the current project')
     .option('--bare', 'Skip creating the bootstrap spec example')
     .option('--format <format>', 'Set the generated spec format')
-    .example('spec-it init')
-    .example('spec-it init --bare')
-    .example('spec-it init --format=json')
+    .example('specify-it init')
+    .example('specify-it init --bare')
+    .example('specify-it init --format=json')
     .action(async (options) => {
       const command = InitCommand.fromCliOptions(options);
       const result = await command.run();
@@ -32,7 +32,7 @@ export function createCli(): ReturnType<typeof cac> {
 
 export async function runCli(argv: string[]): Promise<number> {
   const cli = createCli();
-  cli.parse(['node', 'spec-it', ...argv], { run: false });
+  cli.parse(['node', 'specify-it', ...argv], { run: false });
 
   try {
     if (argv.length === 0) {

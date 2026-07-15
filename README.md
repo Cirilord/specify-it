@@ -1,6 +1,6 @@
-# spec-it
+# specify-it
 
-`spec-it` is a planned CLI and validation library for standardizing spec-driven workflows across repositories.
+`specify-it` is a planned CLI and validation library for standardizing spec-driven workflows across repositories.
 
 ## Goals
 
@@ -12,7 +12,7 @@
 
 ## Product Model
 
-`spec-it` is expected to combine deterministic commands with agent-facing skills.
+`specify-it` is expected to combine deterministic commands with agent-facing skills.
 
 - commands handle structural validation and objective context gathering
 - skills handle semantic review and reconciliation between specs and code
@@ -67,15 +67,15 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn start:dev` runs the source entrypoint directly during development
 - the CLI now uses `cac` as its command-line foundation
 - `yarn start -- --help` shows the current CLI help output
-- `yarn start -- init` bootstraps `.specs/` and `spec-it.config.json`
+- `yarn start -- init` bootstraps `.specs/` and `specify-it.config.json`
 - `yarn start -- init --bare` creates only the minimum structure
 - `yarn start -- init --format=json` changes the generated spec example format
 
-The first CLI command is `spec-it init`.
+The first CLI command is `specify-it init`.
 
 ## Config
 
-`spec-it init` generates a `spec-it.config.json` file that describes the repository spec contract.
+`specify-it init` generates a `specify-it.config.json` file that describes the repository spec contract.
 
 Example:
 
@@ -172,4 +172,4 @@ Implementation work should follow this order:
 
 ## Current Direction
 
-The initial focus is to define the project documentation foundation and then design the first version of the `spec-it` configuration model, CLI, checker behavior, and future skill contract.
+The initial focus is to define the project documentation foundation and then design the first version of the `specify-it` configuration model, CLI, checker behavior, and future skill contract around the `specify-it` package.

@@ -16,7 +16,7 @@ const tsxLoaderPath = path.join(repositoryRootPath, 'node_modules/tsx/dist/loade
 const tempDirectories: string[] = [];
 
 async function createTempDirectory(): Promise<string> {
-  const directoryPath = await mkdtemp(path.join(tmpdir(), 'spec-it-cli-'));
+  const directoryPath = await mkdtemp(path.join(tmpdir(), 'specify-it-cli-'));
   tempDirectories.push(directoryPath);
   return directoryPath;
 }
@@ -37,10 +37,10 @@ function runCliProcess(args: string[], cwd = process.cwd()): SpawnSyncReturns<st
 }
 
 describe('createCli', (): void => {
-  it('creates the spec-it CLI instance', (): void => {
+  it('creates the specify-it CLI instance', (): void => {
     const cli = createCli();
 
-    expect(cli.name).toBe('spec-it');
+    expect(cli.name).toBe('specify-it');
   });
 });
 
@@ -49,7 +49,7 @@ describe('CLI process', (): void => {
     const result = runCliProcess([]);
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('spec-it');
+    expect(result.stdout).toContain('specify-it');
     expect(result.stdout).toContain('Examples:');
   });
 
@@ -58,7 +58,7 @@ describe('CLI process', (): void => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Usage:');
-    expect(result.stdout).toContain('spec-it init');
+    expect(result.stdout).toContain('specify-it init');
   });
 
   it('returns an error for an unknown command', (): void => {
@@ -82,7 +82,7 @@ describe('CLI process', (): void => {
     const result = runCliProcess(['init', '--bare'], cwd);
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('spec-it init complete.');
+    expect(result.stdout).toContain('specify-it init complete.');
     expect(result.stdout).toContain('.specs');
   });
 });

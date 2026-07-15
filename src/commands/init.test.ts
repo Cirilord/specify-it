@@ -8,7 +8,7 @@ import { InitCommand } from './init.js';
 const tempDirectories: string[] = [];
 
 async function createTempDirectory(): Promise<string> {
-  const directoryPath = await mkdtemp(path.join(tmpdir(), 'spec-it-'));
+  const directoryPath = await mkdtemp(path.join(tmpdir(), 'specify-it-'));
   tempDirectories.push(directoryPath);
   return directoryPath;
 }
@@ -49,10 +49,10 @@ describe('InitCommand.getSummary', (): void => {
   it('formats created and skipped file lists', (): void => {
     expect(
       InitCommand.getSummary({
-        created: ['.specs', 'spec-it.config.json'],
+        created: ['.specs', 'specify-it.config.json'],
         skipped: ['.specs/00000000000000_initial_spec_example.md'],
       })
-    ).toContain('Created: .specs, spec-it.config.json');
+    ).toContain('Created: .specs, specify-it.config.json');
   });
 });
 
@@ -63,7 +63,7 @@ describe('InitCommand.run', (): void => {
     Reflect.set(command, 'cwd', cwd);
 
     const result = await command.run();
-    const config = await readJsonConfig(path.join(cwd, 'spec-it.config.json'));
+    const config = await readJsonConfig(path.join(cwd, 'specify-it.config.json'));
     const bootstrapSpec = await readFile(
       path.join(cwd, '.specs/00000000000000_initial_spec_example.md'),
       'utf8'
@@ -71,7 +71,7 @@ describe('InitCommand.run', (): void => {
 
     expect(result.created).toEqual([
       '.specs',
-      'spec-it.config.json',
+      'specify-it.config.json',
       '.specs/00000000000000_initial_spec_example.md',
     ]);
     expect(config).toMatchObject({
@@ -99,7 +99,7 @@ describe('InitCommand.run', (): void => {
     const result = await command.run();
     const gitkeepContent = await readFile(path.join(cwd, '.specs/.gitkeep'), 'utf8');
 
-    expect(result.created).toEqual(['.specs', 'spec-it.config.json', '.specs/.gitkeep']);
+    expect(result.created).toEqual(['.specs', 'specify-it.config.json', '.specs/.gitkeep']);
     expect(gitkeepContent).toBe('');
   });
 
@@ -110,7 +110,7 @@ describe('InitCommand.run', (): void => {
 
     await command.run();
 
-    const config = await readJsonConfig(path.join(cwd, 'spec-it.config.json'));
+    const config = await readJsonConfig(path.join(cwd, 'specify-it.config.json'));
     const bootstrapSpec = await readFile(
       path.join(cwd, '.specs/00000000000000_initial_spec_example.json'),
       'utf8'
@@ -150,7 +150,7 @@ describe('InitCommand.run', (): void => {
 
     expect(result.skipped).toEqual([
       '.specs',
-      'spec-it.config.json',
+      'specify-it.config.json',
       '.specs/00000000000000_initial_spec_example.md',
     ]);
     expect(bootstrapSpec).toBe('custom\n');

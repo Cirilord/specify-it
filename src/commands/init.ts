@@ -83,7 +83,7 @@ export class InitCommand {
   }
 
   public static getSummary(result: InitResult): string {
-    const lines = ['spec-it init complete.'];
+    const lines = ['specify-it init complete.'];
 
     if (result.created.length > 0) {
       lines.push(`Created: ${result.created.join(', ')}`);
@@ -103,7 +103,7 @@ export class InitCommand {
     const result: InitResult = { created: [], skipped: [] };
 
     const specsDirectoryPath = path.join(cwd, '.specs');
-    const configFilePath = path.join(cwd, 'spec-it.config.json');
+    const configFilePath = path.join(cwd, 'specify-it.config.json');
 
     await this.ensureDirectory(specsDirectoryPath, cwd, result);
     await this.writeFileIfMissing(configFilePath, this.createConfigContent(), cwd, result);
@@ -129,7 +129,7 @@ export class InitCommand {
         {
           title: 'Bootstrap Spec Example',
           objective:
-            'Describe the first real change that this repository should implement with spec-it.',
+            'Describe the first real change that this repository should implement with specify-it.',
           scope: [
             'capture the intent of the first implementation',
             'define the boundaries of the change',
@@ -160,7 +160,7 @@ export class InitCommand {
         '  <body>',
         '    <h1>Bootstrap Spec Example</h1>',
         '    <h2>Objective</h2>',
-        '    <p>Describe the first real change that this repository should implement with spec-it.</p>',
+        '    <p>Describe the first real change that this repository should implement with specify-it.</p>',
         '    <h2>Scope</h2>',
         '    <ul>',
         '      <li>capture the intent of the first implementation</li>',
@@ -188,7 +188,7 @@ export class InitCommand {
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<spec>',
         '  <title>Bootstrap Spec Example</title>',
-        '  <objective>Describe the first real change that this repository should implement with spec-it.</objective>',
+        '  <objective>Describe the first real change that this repository should implement with specify-it.</objective>',
         '  <scope>',
         '    <item>capture the intent of the first implementation</item>',
         '    <item>define the boundaries of the change</item>',
@@ -213,7 +213,7 @@ export class InitCommand {
       '',
       '## Objective',
       '',
-      'Describe the first real change that this repository should implement with `spec-it`.',
+      'Describe the first real change that this repository should implement with `specify-it`.',
       '',
       '## Scope',
       '',
