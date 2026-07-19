@@ -14,6 +14,17 @@ type CheckJsonOutput = {
   ok: boolean;
 };
 
+type ListJsonOutput = {
+  count: number;
+  errors?: string[];
+  specs: Array<{
+    format: string;
+    group: string | null;
+    naming: string;
+    path: string;
+  }>;
+};
+
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectoryPath = path.dirname(currentFilePath);
 const cliEntrypointPath = path.join(currentDirectoryPath, 'index.ts');
@@ -47,6 +58,10 @@ function parseCheckJsonOutput(stdout: string): CheckJsonOutput {
   return JSON.parse(stdout) as CheckJsonOutput;
 }
 
+function parseListJsonOutput(stdout: string): ListJsonOutput {
+  return JSON.parse(stdout) as ListJsonOutput;
+}
+
 describe('createCli', (): void => {
   it('creates the specify-it CLI instance', (): void => {
     const cli = createCli();
@@ -71,6 +86,7 @@ describe('CLI process', (): void => {
     expect(result.stdout).toContain('Usage:');
     expect(result.stdout).toContain('specify-it check');
     expect(result.stdout).toContain('specify-it init');
+    expect(result.stdout).toContain('specify-it list');
     expect(result.stdout).toContain('specify-it new');
   });
 
@@ -248,6 +264,119 @@ describe('CLI process', (): void => {
 
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('Invalid spec filename');
+  });
+
+  it('runs list through the CLI', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'slug',
+            root: '.specs',
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(
+      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      '# Bootstrap\n',
+      'utf8'
+    );
+
+    const result = runCliProcess(['list'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('.specs/bootstrap-release-workflow.md');
+    expect(result.stdout).toContain('1 specs found.');
+  });
+
+  it('runs list through the CLI with json output', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'slug',
+            root: '.specs',
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(
+      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      '# Bootstrap\n',
+      'utf8'
+    );
+
+    const result = runCliProcess(['list', '--json'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(parseListJsonOutput(result.stdout)).toEqual({
+      count: 1,
+      specs: [
+        {
+          format: 'md',
+          group: null,
+          naming: 'slug',
+          path: '.specs/bootstrap-release-workflow.md',
+        },
+      ],
+    });
+  });
+
+  it('returns a non-zero exit code when list finds validation errors', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'date-slug',
+            root: '.specs',
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(
+      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      '# Bootstrap\n',
+      'utf8'
+    );
+
+    const result = runCliProcess(['list'], cwd);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('Invalid spec filename: .specs/bootstrap-release-workflow.md');
   });
 
   it('returns json output for handled check command errors', async (): Promise<void> => {

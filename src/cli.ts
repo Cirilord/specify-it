@@ -3,9 +3,10 @@ import { cac } from 'cac';
 import packageJson from '../package.json' with { type: 'json' };
 import { CheckCommand } from './commands/check.js';
 import { InitCommand } from './commands/init.js';
+import { ListCommand } from './commands/list.js';
 import { NewCommand } from './commands/new.js';
 
-const SUPPORTED_COMMANDS = new Set(['check', 'init', 'new']);
+const SUPPORTED_COMMANDS = new Set(['check', 'init', 'list', 'new']);
 
 export function createCli(): ReturnType<typeof cac> {
   const cli = cac('specify-it');
@@ -60,6 +61,24 @@ export function createCli(): ReturnType<typeof cac> {
       const result = await command.run();
 
       console.info(InitCommand.getSummary(result));
+    });
+
+  cli
+    .command('list', 'List repository specs from the repository configuration')
+    .option('--json', 'Print the result as JSON')
+    .example('specify-it list')
+    .example('specify-it list --json')
+    .action(async (options) => {
+      const command = ListCommand.fromCliOptions(options);
+      const result = await command.run();
+
+      console.info(
+        command.json ? ListCommand.getJsonSummary(result) : ListCommand.getSummary(result)
+      );
+
+      if (result.errors.length > 0) {
+        process.exitCode = 1;
+      }
     });
 
   cli
