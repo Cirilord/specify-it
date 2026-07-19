@@ -14,7 +14,7 @@ import {
 
 describe('spec-naming', (): void => {
   it('creates slugs with normalized separators', (): void => {
-    expect(createSlug('  Café release workflow!!!  ')).toBe('cafe-release-workflow');
+    expect(createSlug('  Café release workflow!!!  ')).toBe('cafe_release_workflow');
   });
 
   it('throws when a title cannot produce a slug', (): void => {
@@ -32,104 +32,104 @@ describe('spec-naming', (): void => {
         group: undefined,
         naming: 'timestamp-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('20260719013000_bootstrap-release-workflow.md');
+    ).toBe('20260719013000_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: undefined,
         naming: 'slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('bootstrap-release-workflow.md');
+    ).toBe('bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: undefined,
         naming: 'sequence-slug',
         sequenceNumber: 7,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('0007_bootstrap-release-workflow.md');
+    ).toBe('0007_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: undefined,
         naming: 'date-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('20260719_bootstrap-release-workflow.md');
+    ).toBe('20260719_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: undefined,
         naming: 'datetime-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('20260719T013000_bootstrap-release-workflow.md');
+    ).toBe('20260719T013000_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: 'feat',
         naming: 'group-timestamp-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('feat_20260719013000_bootstrap-release-workflow.md');
+    ).toBe('feat_20260719013000_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: 'feat',
         naming: 'timestamp-group-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('20260719013000_feat_bootstrap-release-workflow.md');
+    ).toBe('20260719013000_feat_bootstrap_release_workflow.md');
     expect(
       buildSpecFileName({
         format: 'md',
         group: 'feat',
         naming: 'group-slug',
         sequenceNumber: undefined,
-        slug: 'bootstrap-release-workflow',
+        slug: 'bootstrap_release_workflow',
         timestamp,
       })
-    ).toBe('feat_bootstrap-release-workflow.md');
+    ).toBe('feat_bootstrap_release_workflow.md');
   });
 
   it('extracts sequence prefixes when present', (): void => {
-    expect(getSequenceFromFileName('0007_bootstrap-release-workflow.md', 'md')).toBe(7);
-    expect(getSequenceFromFileName('bootstrap-release-workflow.md', 'md')).toBeUndefined();
+    expect(getSequenceFromFileName('0007_bootstrap_release_workflow.md', 'md')).toBe(7);
+    expect(getSequenceFromFileName('bootstrap_release_workflow.md', 'md')).toBeUndefined();
   });
 
   it('validates file names for simple and grouped strategies', (): void => {
     expect(
-      validateSpecFileName('20260719013000_bootstrap-release-workflow.md', {
+      validateSpecFileName('20260719013000_bootstrap_release_workflow.md', {
         format: 'md',
         group: undefined,
         naming: 'timestamp-slug',
       })
     ).toBe(true);
     expect(
-      validateSpecFileName('feat_bootstrap-release-workflow.md', {
+      validateSpecFileName('feat_bootstrap_release_workflow.md', {
         format: 'md',
         group: 'feat',
         naming: 'group-slug',
       })
     ).toBe(true);
     expect(
-      validateSpecFileName('fix_bootstrap-release-workflow.md', {
+      validateSpecFileName('fix_bootstrap_release_workflow.md', {
         format: 'md',
         group: 'feat',
         naming: 'group-slug',

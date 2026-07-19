@@ -84,12 +84,12 @@ describe('NewCommand.run', (): void => {
 
     const result = await command.run();
     const createdSpec = await readFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       'utf8'
     );
 
     expect(result).toEqual({
-      created: '.specs/20260714213000_bootstrap-release-workflow.md',
+      created: '.specs/20260714213000_bootstrap_release_workflow.md',
     });
     expect(createdSpec).toBe(
       [
@@ -133,7 +133,7 @@ describe('NewCommand.run', (): void => {
     const result = await command.run();
 
     expect(result).toEqual({
-      created: '.specs/feat/20260714213000_add-config-loader.md',
+      created: '.specs/feat/20260714213000_add_config_loader.md',
     });
   });
 
@@ -262,7 +262,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/bootstrap-release-workflow.md',
+      created: '.specs/bootstrap_release_workflow.md',
     });
   });
 
@@ -283,7 +283,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/20260714_bootstrap-release-workflow.md',
+      created: '.specs/20260714_bootstrap_release_workflow.md',
     });
   });
 
@@ -304,7 +304,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/20260714T213000_bootstrap-release-workflow.md',
+      created: '.specs/20260714T213000_bootstrap_release_workflow.md',
     });
   });
 
@@ -324,10 +324,10 @@ describe('NewCommand.run', (): void => {
       },
     });
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
-    await writeFile(path.join(cwd, '.specs/0006_existing-spec.md'), '# Existing\n', 'utf8');
+    await writeFile(path.join(cwd, '.specs/0006_existing_spec.md'), '# Existing\n', 'utf8');
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/0007_bootstrap-release-workflow.md',
+      created: '.specs/0007_bootstrap_release_workflow.md',
     });
   });
 
@@ -352,7 +352,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/feat/feat_bootstrap-release-workflow.md',
+      created: '.specs/feat/feat_bootstrap_release_workflow.md',
     });
   });
 
@@ -377,7 +377,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/feat/feat_20260714213000_bootstrap-release-workflow.md',
+      created: '.specs/feat/feat_20260714213000_bootstrap_release_workflow.md',
     });
   });
 
@@ -402,7 +402,7 @@ describe('NewCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
-      created: '.specs/feat/20260714213000_feat_bootstrap-release-workflow.md',
+      created: '.specs/feat/20260714213000_feat_bootstrap_release_workflow.md',
     });
   });
 
@@ -445,13 +445,13 @@ describe('NewCommand.run', (): void => {
 
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       'custom\n',
       'utf8'
     );
 
     await expect(command.run()).rejects.toThrow(
-      'Spec file already exists: .specs/20260714213000_bootstrap-release-workflow.md'
+      'Spec file already exists: .specs/20260714213000_bootstrap_release_workflow.md'
     );
   });
 

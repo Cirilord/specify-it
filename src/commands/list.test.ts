@@ -83,9 +83,9 @@ describe('ListCommand.run', (): void => {
         root: '.specs',
       },
     });
-    await writeFile(path.join(cwd, '.specs/add-config-loader.md'), '# Add Config Loader\n', 'utf8');
+    await writeFile(path.join(cwd, '.specs/add_config_loader.md'), '# Add Config Loader\n', 'utf8');
     await writeFile(
-      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/bootstrap_release_workflow.md'),
       '# Bootstrap\n',
       'utf8'
     );
@@ -98,13 +98,13 @@ describe('ListCommand.run', (): void => {
           format: 'md',
           group: null,
           naming: 'slug',
-          path: '.specs/add-config-loader.md',
+          path: '.specs/add_config_loader.md',
         },
         {
           format: 'md',
           group: null,
           naming: 'slug',
-          path: '.specs/bootstrap-release-workflow.md',
+          path: '.specs/bootstrap_release_workflow.md',
         },
       ],
     });
@@ -129,11 +129,11 @@ describe('ListCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/feat/feat_add-config-loader.md'),
+      path.join(cwd, '.specs/feat/feat_add_config_loader.md'),
       '# Add Config Loader\n',
       'utf8'
     );
-    await writeFile(path.join(cwd, '.specs/fix/fix_repair-parser.md'), '# Repair Parser\n', 'utf8');
+    await writeFile(path.join(cwd, '.specs/fix/fix_repair_parser.md'), '# Repair Parser\n', 'utf8');
 
     await expect(command.run()).resolves.toEqual({
       count: 2,
@@ -143,13 +143,13 @@ describe('ListCommand.run', (): void => {
           format: 'md',
           group: 'feat',
           naming: 'group-slug',
-          path: '.specs/feat/feat_add-config-loader.md',
+          path: '.specs/feat/feat_add_config_loader.md',
         },
         {
           format: 'md',
           group: 'fix',
           naming: 'group-slug',
-          path: '.specs/fix/fix_repair-parser.md',
+          path: '.specs/fix/fix_repair_parser.md',
         },
       ],
     });
@@ -244,14 +244,14 @@ describe('ListCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/bootstrap_release_workflow.md'),
       '# Bootstrap\n',
       'utf8'
     );
 
     await expect(command.run()).resolves.toEqual({
       count: 0,
-      errors: ['Invalid spec filename: .specs/bootstrap-release-workflow.md'],
+      errors: ['Invalid spec filename: .specs/bootstrap_release_workflow.md'],
       specs: [],
     });
   });

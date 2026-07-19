@@ -100,7 +100,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       [
         '# Bootstrap Release Workflow',
         '',
@@ -305,7 +305,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/feat/nested/20260714213000_add-config-loader.md'),
+      path.join(cwd, '.specs/feat/nested/20260714213000_add_config_loader.md'),
       '# Add Config Loader\n',
       'utf8'
     );
@@ -344,7 +344,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/add-config-loader.md'),
+      path.join(cwd, '.specs/add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -393,7 +393,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714_add-config-loader.md'),
+      path.join(cwd, '.specs/20260714_add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -442,7 +442,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/0007_add-config-loader.md'),
+      path.join(cwd, '.specs/0007_add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -492,7 +492,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/feat/20260714213000_feat_add-config-loader.md'),
+      path.join(cwd, '.specs/feat/20260714213000_feat_add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -575,7 +575,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/feat/fix_add-config-loader.md'),
+      path.join(cwd, '.specs/feat/fix_add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -597,7 +597,7 @@ describe('CheckCommand.run', (): void => {
       changedSpecs: 0,
       checkedSpecs: 1,
       errors: [
-        'Invalid spec filename: .specs/feat/fix_add-config-loader.md must match feat_slug.md.',
+        'Invalid spec filename: .specs/feat/fix_add_config_loader.md must match feat_slug.md.',
       ],
     });
   });
@@ -626,7 +626,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_add-config-loader.md'),
+      path.join(cwd, '.specs/20260714213000_add_config_loader.md'),
       [
         '# Add Config Loader',
         '',
@@ -648,8 +648,8 @@ describe('CheckCommand.run', (): void => {
       changedSpecs: 0,
       checkedSpecs: 1,
       errors: [
-        'Invalid section heading: .specs/20260714213000_add-config-loader.md contains unsupported section "Notes".',
-        'Invalid section order: .specs/20260714213000_add-config-loader.md does not follow the configured section order.',
+        'Invalid section heading: .specs/20260714213000_add_config_loader.md contains unsupported section "Notes".',
+        'Invalid section order: .specs/20260714213000_add_config_loader.md does not follow the configured section order.',
       ],
     });
   });
@@ -756,7 +756,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_first-spec.md'),
+      path.join(cwd, '.specs/20260714213000_first_spec.md'),
       [
         '# First Spec',
         '',
@@ -775,7 +775,7 @@ describe('CheckCommand.run', (): void => {
     );
     commitAll(cwd, 'chore(repo): bootstrap');
     await writeFile(
-      path.join(cwd, '.specs/20260714214000_second-spec.md'),
+      path.join(cwd, '.specs/20260714214000_second_spec.md'),
       [
         '# Second Spec',
         '',
@@ -793,7 +793,7 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
     await writeFile(
-      path.join(cwd, '.specs/20260714215000_third-spec.md'),
+      path.join(cwd, '.specs/20260714215000_third_spec.md'),
       [
         '# Third Spec',
         '',
@@ -852,7 +852,7 @@ describe('CheckCommand.run', (): void => {
     await writeFile(path.join(cwd, 'notes.txt'), 'base\n', 'utf8');
     commitAll(cwd, 'chore(repo): bootstrap');
     await writeFile(
-      path.join(cwd, '.specs/20260714214000_single-spec.md'),
+      path.join(cwd, '.specs/20260714214000_single_spec.md'),
       [
         '# Single Spec',
         '',
@@ -902,7 +902,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       [
         '# Bootstrap Release Workflow',
         '',
@@ -921,7 +921,7 @@ describe('CheckCommand.run', (): void => {
     );
     commitAll(cwd, 'chore(repo): bootstrap');
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       [
         '# Bootstrap Release Workflow',
         '',
@@ -977,7 +977,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/20260714214000_existing-spec.md'),
+      path.join(cwd, '.specs/20260714214000_existing_spec.md'),
       [
         '# Existing Spec',
         '',
@@ -1014,7 +1014,7 @@ describe('CheckCommand.run', (): void => {
     );
     commitAll(cwd, 'chore(repo): bootstrap');
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_new-spec.md'),
+      path.join(cwd, '.specs/20260714213000_new_spec.md'),
       [
         '# New Spec',
         '',
@@ -1036,7 +1036,7 @@ describe('CheckCommand.run', (): void => {
       changedSpecs: 1,
       checkedSpecs: 3,
       errors: [
-        'Spec is not the latest in its directory: .specs/20260714213000_new-spec.md must be the newest timestamp-slug spec in .specs.',
+        'Spec is not the latest in its directory: .specs/20260714213000_new_spec.md must be the newest timestamp-slug spec in .specs.',
       ],
     });
   });
@@ -1072,7 +1072,7 @@ describe('CheckCommand.run', (): void => {
       },
     });
     await writeFile(
-      path.join(cwd, '.specs/feat/20260714213000_existing-feat.md'),
+      path.join(cwd, '.specs/feat/20260714213000_existing_feat.md'),
       [
         '# Existing Feat',
         '',
@@ -1090,7 +1090,7 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
     await writeFile(
-      path.join(cwd, '.specs/fix/20260714215000_existing-fix.md'),
+      path.join(cwd, '.specs/fix/20260714215000_existing_fix.md'),
       [
         '# Existing Fix',
         '',
@@ -1109,7 +1109,7 @@ describe('CheckCommand.run', (): void => {
     );
     commitAll(cwd, 'chore(repo): bootstrap');
     await writeFile(
-      path.join(cwd, '.specs/feat/20260714216000_new-feat.md'),
+      path.join(cwd, '.specs/feat/20260714216000_new_feat.md'),
       [
         '# New Feat',
         '',

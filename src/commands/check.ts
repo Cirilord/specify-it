@@ -333,7 +333,7 @@ export class CheckCommand {
   }
 
   private getTimestampFromFileName(fileName: string): string | undefined {
-    const match = fileName.match(/^(\d{14})_[a-z0-9]+(?:-[a-z0-9]+)*\.[^.]+$/u);
+    const match = fileName.match(/^(\d{14})_[a-z0-9]+(?:_[a-z0-9]+)*\.[^.]+$/u);
     return match?.[1];
   }
 

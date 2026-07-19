@@ -1,5 +1,5 @@
 const BOOTSTRAP_SPEC_FILE_BASENAME = '00000000000000_initial_spec_example';
-const SLUG_PATTERN = '[a-z0-9]+(?:-[a-z0-9]+)*';
+const SLUG_PATTERN = '[a-z0-9]+(?:_[a-z0-9]+)*';
 
 export const SUPPORTED_SPEC_NAMINGS = [
   'timestamp-slug',
@@ -91,9 +91,9 @@ export function createSlug(title: string): string {
     .toLowerCase()
     .normalize('NFKD')
     .replaceAll(/\p{Diacritic}/gu, '')
-    .replaceAll(/[^a-z0-9]+/g, '-')
-    .replaceAll(/-+/g, '-')
-    .replaceAll(/^-|-$/g, '');
+    .replaceAll(/[^a-z0-9]+/g, '_')
+    .replaceAll(/_+/g, '_')
+    .replaceAll(/^_|_$/g, '');
 
   if (slug.length === 0) {
     throw new Error('Title must include letters or numbers after normalization.');

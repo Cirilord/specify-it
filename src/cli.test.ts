@@ -145,7 +145,7 @@ describe('CLI process', (): void => {
     );
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       [
         '# Bootstrap Release Workflow',
         '',
@@ -200,7 +200,7 @@ describe('CLI process', (): void => {
     );
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/20260714213000_bootstrap_release_workflow.md'),
       [
         '# Bootstrap Release Workflow',
         '',
@@ -289,7 +289,7 @@ describe('CLI process', (): void => {
     );
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/bootstrap_release_workflow.md'),
       '# Bootstrap\n',
       'utf8'
     );
@@ -297,7 +297,7 @@ describe('CLI process', (): void => {
     const result = runCliProcess(['list'], cwd);
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('.specs/bootstrap-release-workflow.md');
+    expect(result.stdout).toContain('.specs/bootstrap_release_workflow.md');
     expect(result.stdout).toContain('1 specs found.');
   });
 
@@ -324,7 +324,7 @@ describe('CLI process', (): void => {
     );
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/bootstrap_release_workflow.md'),
       '# Bootstrap\n',
       'utf8'
     );
@@ -339,7 +339,7 @@ describe('CLI process', (): void => {
           format: 'md',
           group: null,
           naming: 'slug',
-          path: '.specs/bootstrap-release-workflow.md',
+          path: '.specs/bootstrap_release_workflow.md',
         },
       ],
     });
@@ -368,7 +368,7 @@ describe('CLI process', (): void => {
     );
     await mkdir(path.join(cwd, '.specs'), { recursive: true });
     await writeFile(
-      path.join(cwd, '.specs/bootstrap-release-workflow.md'),
+      path.join(cwd, '.specs/bootstrap_release_workflow.md'),
       '# Bootstrap\n',
       'utf8'
     );
@@ -376,7 +376,7 @@ describe('CLI process', (): void => {
     const result = runCliProcess(['list'], cwd);
 
     expect(result.status).toBe(1);
-    expect(result.stdout).toContain('Invalid spec filename: .specs/bootstrap-release-workflow.md');
+    expect(result.stdout).toContain('Invalid spec filename: .specs/bootstrap_release_workflow.md');
   });
 
   it('returns json output for handled check command errors', async (): Promise<void> => {
@@ -434,7 +434,7 @@ describe('CLI process', (): void => {
 
     const createdFiles = await readdir(path.join(cwd, '.specs'));
     const createdFileName = createdFiles.find((fileName) =>
-      /^20\d{12}_bootstrap-release-workflow\.md$/.test(fileName)
+      /^20\d{12}_bootstrap_release_workflow\.md$/.test(fileName)
     );
     const createdSpec = await readFile(path.join(cwd, '.specs', createdFileName ?? ''), 'utf8');
 
