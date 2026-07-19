@@ -245,7 +245,7 @@ describe('NewCommand.run', (): void => {
     );
   });
 
-  it('fails for unsupported naming strategies', async (): Promise<void> => {
+  it('creates a slug-named spec when configured', async (): Promise<void> => {
     const cwd = await createTempDirectory();
     const command = NewCommand.fromCliOptions({ title: 'Bootstrap Release Workflow' });
     Reflect.set(command, 'cwd', cwd);
@@ -261,8 +261,169 @@ describe('NewCommand.run', (): void => {
       },
     });
 
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates a date-slug spec when configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({ title: 'Bootstrap Release Workflow' });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        naming: 'date-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/20260714_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates a datetime-slug spec when configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({ title: 'Bootstrap Release Workflow' });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        naming: 'datetime-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/20260714T213000_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates the next sequence-slug spec when configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({ title: 'Bootstrap Release Workflow' });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        naming: 'sequence-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(path.join(cwd, '.specs/0006_existing-spec.md'), '# Existing\n', 'utf8');
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/0007_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates a group-slug spec when grouped naming is configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({
+      group: 'feat',
+      title: 'Bootstrap Release Workflow',
+    });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'group-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/feat/feat_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates a group-timestamp-slug spec when grouped naming is configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({
+      group: 'feat',
+      title: 'Bootstrap Release Workflow',
+    });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'group-timestamp-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/feat/feat_20260714213000_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('creates a timestamp-group-slug spec when grouped naming is configured', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({
+      group: 'feat',
+      title: 'Bootstrap Release Workflow',
+    });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'timestamp-group-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
+    await expect(command.run()).resolves.toEqual({
+      created: '.specs/feat/20260714213000_feat_bootstrap-release-workflow.md',
+    });
+  });
+
+  it('fails when a group-based naming strategy is configured without specs.groups', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = NewCommand.fromCliOptions({ title: 'Bootstrap Release Workflow' });
+    Reflect.set(command, 'cwd', cwd);
+
+    await writeConfig(cwd, {
+      specs: {
+        format: 'md',
+        naming: 'group-slug',
+        root: '.specs',
+        sections: {
+          order: ['Title', 'Objective'],
+        },
+      },
+    });
+
     await expect(command.run()).rejects.toThrow(
-      'Unsupported spec naming for new: slug. Only timestamp-slug is currently supported.'
+      'Naming strategy "group-slug" requires specs.groups to be configured.'
     );
   });
 

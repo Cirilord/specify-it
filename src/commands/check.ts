@@ -4,24 +4,21 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { z } from 'zod';
 
+import {
+  getFileNameExpectation,
+  isNamingSupportedForCommitAwareRecency,
+  isNamingUsingGroup,
+  isRealTimestampSlugFileName,
+  type SpecNaming,
+  SUPPORTED_SPEC_NAMINGS,
+  validateSpecFileName,
+} from '../utils/spec-naming.js';
+
 const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
-const SUPPORTED_SPEC_NAMINGS = [
-  'timestamp-slug',
-  'slug',
-  'sequence-slug',
-  'date-slug',
-  'datetime-slug',
-  'group-timestamp-slug',
-  'timestamp-group-slug',
-  'group-slug',
-] as const;
 const CONFIG_FILE_NAME = 'specify-it.config.json';
-const BOOTSTRAP_SPEC_FILE_BASENAME = '00000000000000_initial_spec_example';
-const TIMESTAMP_SLUG_NAMING = 'timestamp-slug';
 const execFileAsync = promisify(execFile);
 
 type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
-type SpecNaming = (typeof SUPPORTED_SPEC_NAMINGS)[number];
 type CommitSpecsMode = 'none' | 'one' | 'any';
 
 type CheckResult = {
@@ -178,9 +175,9 @@ export class CheckCommand {
       };
     }
 
-    if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
+    if (isNamingUsingGroup(config.specs.naming) && config.specs.groups === undefined) {
       errors.push(
-        `Unsupported spec naming for check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
+        `Invalid spec naming configuration: ${config.specs.naming} requires specs.groups to be configured.`
       );
       return {
         changedSpecs: 0,
@@ -328,7 +325,7 @@ export class CheckCommand {
     const timestamps = entries
       .filter((entry) => entry.isFile())
       .map((entry) => entry.name)
-      .filter((fileName) => this.isRealTimestampSlugFileName(fileName, format))
+      .filter((fileName) => isRealTimestampSlugFileName(fileName, format))
       .map((fileName) => this.getTimestampFromFileName(fileName))
       .filter((timestamp): timestamp is string => timestamp !== undefined);
 
@@ -342,24 +339,6 @@ export class CheckCommand {
 
   private isGitAddedStatus(status: string): boolean {
     return status === '??' || status.includes('A');
-  }
-
-  private isRealTimestampSlugFileName(fileName: string, format: SpecFormat): boolean {
-    if (fileName === `${BOOTSTRAP_SPEC_FILE_BASENAME}.${format}`) {
-      return false;
-    }
-
-    const pattern = new RegExp(`^\\d{14}_[a-z0-9]+(?:-[a-z0-9]+)*\\.${format}$`, 'u');
-    return pattern.test(fileName);
-  }
-
-  private isTimestampSlugFileName(fileName: string, format: SpecFormat): boolean {
-    if (fileName === `${BOOTSTRAP_SPEC_FILE_BASENAME}.${format}`) {
-      return true;
-    }
-
-    const pattern = new RegExp(`^\\d{14}_[a-z0-9]+(?:-[a-z0-9]+)*\\.${format}$`, 'u');
-    return pattern.test(fileName);
   }
 
   private async loadConfig(cwd: string): Promise<RepositoryConfig> {
@@ -503,9 +482,9 @@ export class CheckCommand {
       };
     }
 
-    if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
+    if (!isNamingSupportedForCommitAwareRecency(config.specs.naming)) {
       errors.push(
-        `Unsupported spec naming for commit-aware check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
+        `Unsupported spec naming for commit-aware check: ${config.specs.naming}. Only timestamp-slug is currently supported.`
       );
       return {
         changedSpecs: changedSpecFiles.length,
@@ -517,9 +496,7 @@ export class CheckCommand {
     const newSpecFiles = changedSpecFiles.filter((specFile) => specFile.isNew);
 
     for (const specFile of newSpecFiles) {
-      if (
-        !this.isRealTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)
-      ) {
+      if (!isRealTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)) {
         continue;
       }
 
@@ -634,9 +611,19 @@ export class CheckCommand {
       errors.push(`Invalid spec extension: ${specFile.displayPath} must use ${expectedExtension}.`);
     }
 
-    if (!this.isTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)) {
+    if (
+      !validateSpecFileName(path.basename(specFile.absolutePath), {
+        format: config.specs.format,
+        group: specFile.group,
+        naming: config.specs.naming,
+      })
+    ) {
       errors.push(
-        `Invalid spec filename: ${specFile.displayPath} must match YYYYMMDDHHMMSS_slug${expectedExtension}.`
+        `Invalid spec filename: ${specFile.displayPath} ${getFileNameExpectation({
+          format: config.specs.format,
+          group: specFile.group,
+          naming: config.specs.naming,
+        })}`
       );
     }
 

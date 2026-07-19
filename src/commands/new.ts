@@ -1,24 +1,21 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
+import {
+  buildSpecFileName,
+  createSlug,
+  getSequenceFromFileName,
+  isNamingUsingGroup,
+  type SpecNaming,
+  SUPPORTED_SPEC_NAMINGS,
+} from '../utils/spec-naming.js';
+
 const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
-const SUPPORTED_SPEC_NAMINGS = [
-  'timestamp-slug',
-  'slug',
-  'sequence-slug',
-  'date-slug',
-  'datetime-slug',
-  'group-timestamp-slug',
-  'timestamp-group-slug',
-  'group-slug',
-] as const;
 const CONFIG_FILE_NAME = 'specify-it.config.json';
 const SUPPORTED_NEW_SPEC_FORMAT = 'md';
-const SUPPORTED_NEW_NAMING = 'timestamp-slug';
 
 type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
-type SpecNaming = (typeof SUPPORTED_SPEC_NAMINGS)[number];
 
 type NewOptions = {
   cwd: string | undefined;
@@ -112,16 +109,18 @@ export class NewCommand {
       );
     }
 
-    if (config.naming !== SUPPORTED_NEW_NAMING) {
-      throw new Error(
-        `Unsupported spec naming for new: ${config.naming}. Only ${SUPPORTED_NEW_NAMING} is currently supported.`
-      );
-    }
-
-    const group = this.resolveGroup(config.groups);
+    const group = this.resolveGroup(config.naming, config.groups);
     const targetDirectoryPath =
       group === undefined ? path.join(cwd, config.root) : path.join(cwd, config.root, group);
-    const targetFileName = `${this.formatTimestamp(new Date())}_${this.createSlug(this.title)}.md`;
+    const titleSlug = createSlug(this.title);
+    const targetFileName = buildSpecFileName({
+      format: config.format,
+      group,
+      naming: config.naming,
+      sequenceNumber: await this.getNextSequenceNumber(targetDirectoryPath, config.format),
+      slug: titleSlug,
+      timestamp: new Date(),
+    });
     const targetFilePath = path.join(targetDirectoryPath, targetFileName);
 
     try {
@@ -159,32 +158,24 @@ export class NewCommand {
     return `${lines.join('\n')}\n`;
   }
 
-  private createSlug(title: string): string {
-    const slug = title
-      .trim()
-      .toLowerCase()
-      .normalize('NFKD')
-      .replaceAll(/\p{Diacritic}/gu, '')
-      .replaceAll(/[^a-z0-9]+/g, '-')
-      .replaceAll(/-+/g, '-')
-      .replaceAll(/^-|-$/g, '');
+  private async getNextSequenceNumber(directoryPath: string, format: SpecFormat): Promise<number> {
+    try {
+      const entries = await readdir(directoryPath, { withFileTypes: true });
+      const highestSequence = entries
+        .filter((entry) => entry.isFile())
+        .map((entry) => getSequenceFromFileName(entry.name, format))
+        .filter((value): value is number => value !== undefined)
+        .sort((left, right) => right - left)
+        .at(0);
 
-    if (slug.length === 0) {
-      throw new Error('Title must include letters or numbers after normalization.');
+      return (highestSequence ?? 0) + 1;
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        return 1;
+      }
+
+      throw error;
     }
-
-    return slug;
-  }
-
-  private formatTimestamp(date: Date): string {
-    const year = String(date.getFullYear());
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    return `${year}${month}${day}${hours}${minutes}${seconds}`;
   }
 
   private async loadConfig(cwd: string): Promise<SpecsConfig> {
@@ -223,10 +214,14 @@ export class NewCommand {
     }
   }
 
-  private resolveGroup(groups: string[] | undefined): string | undefined {
+  private resolveGroup(naming: SpecNaming, groups: string[] | undefined): string | undefined {
     if (groups === undefined) {
       if (this.group !== undefined) {
         throw new Error('This repository does not define spec groups.');
+      }
+
+      if (isNamingUsingGroup(naming)) {
+        throw new Error(`Naming strategy "${naming}" requires specs.groups to be configured.`);
       }
 
       return undefined;

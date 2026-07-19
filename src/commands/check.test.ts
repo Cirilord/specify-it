@@ -320,7 +320,7 @@ describe('CheckCommand.run', (): void => {
     });
   });
 
-  it('fails for unsupported naming strategies', async (): Promise<void> => {
+  it('passes for slug naming', async (): Promise<void> => {
     const cwd = await createTempDirectory();
     const command = CheckCommand.fromCliOptions({});
     Reflect.set(command, 'cwd', cwd);
@@ -343,12 +343,261 @@ describe('CheckCommand.run', (): void => {
         },
       },
     });
+    await writeFile(
+      path.join(cwd, '.specs/add-config-loader.md'),
+      [
+        '# Add Config Loader',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [],
+    });
+  });
+
+  it('passes for date-slug naming', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'date-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714_add-config-loader.md'),
+      [
+        '# Add Config Loader',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [],
+    });
+  });
+
+  it('passes for sequence-slug naming', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'sequence-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/0007_add-config-loader.md'),
+      [
+        '# Add Config Loader',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [],
+    });
+  });
+
+  it('passes for grouped filename strategies when the filename group matches the directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs/feat'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'timestamp-group-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/feat/20260714213000_feat_add-config-loader.md'),
+      [
+        '# Add Config Loader',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [],
+    });
+  });
+
+  it('fails when a group-based naming strategy is configured without specs.groups', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'group-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
 
     await expect(command.run()).resolves.toEqual({
       changedSpecs: 0,
       checkedSpecs: 0,
       errors: [
-        'Unsupported spec naming for check: slug. Only timestamp-slug is currently supported.',
+        'Invalid spec naming configuration: group-slug requires specs.groups to be configured.',
+      ],
+    });
+  });
+
+  it('fails when a grouped filename embeds a different group than its directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs/feat'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'group-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/feat/fix_add-config-loader.md'),
+      [
+        '# Add Config Loader',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [
+        'Invalid spec filename: .specs/feat/fix_add-config-loader.md must match feat_slug.md.',
       ],
     });
   });

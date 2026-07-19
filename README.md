@@ -149,11 +149,12 @@ Field overview:
 
 - the first version requires `--title`
 - the first version only scaffolds Markdown specs
-- the first version only supports `specs.naming = "timestamp-slug"`
+- the current version supports every configured `specs.naming` strategy
 - the command reads `specify-it.config.json` from the current repository root
 - `specs.groups` is optional
 - when `specs.groups` is not configured, the spec is created directly under `specs.root`
 - when `specs.groups` is configured, the command requires `--group` and validates it against the configured list
+- naming strategies that include `group` require `specs.groups` so the filename can embed the configured group value
 
 Example:
 
@@ -178,8 +179,9 @@ For grouped repositories, `specs.groups` is expected to use this shape:
 
 - the first version uses `specs.root`, `specs.groups`, and `checks.requireSpecsDirectory` to validate repository structure
 - the first version validates file extensions when `checks.requireKnownExtension` is enabled
-- the first version validates filenames only for `specs.naming = "timestamp-slug"`
+- the current version validates filenames for every configured `specs.naming` strategy
 - the first version validates Markdown title and section structure using `specs.sections.*` and `checks.requireOrderedSections`
+- grouped filename strategies also validate that the group embedded in the filename matches the configured group directory
 - the checker now also supports commit-aware validation through `checks.commitSpecs`
 - `checks.commitSpecs.mode` supports `none`, `one`, and `any` using local Git working tree changes
 - `checks.commitSpecs.maxChangedSpecs` optionally limits how many spec files may be changed at once
