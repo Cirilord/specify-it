@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { z } from 'zod';
 
 const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
@@ -16,9 +18,11 @@ const SUPPORTED_SPEC_NAMINGS = [
 const CONFIG_FILE_NAME = 'specify-it.config.json';
 const BOOTSTRAP_SPEC_FILE_BASENAME = '00000000000000_initial_spec_example';
 const TIMESTAMP_SLUG_NAMING = 'timestamp-slug';
+const execFileAsync = promisify(execFile);
 
 type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
 type SpecNaming = (typeof SUPPORTED_SPEC_NAMINGS)[number];
+type CommitSpecsMode = 'none' | 'one' | 'any';
 
 type CheckResult = {
   errors: string[];
@@ -37,6 +41,13 @@ type SpecsConfig = {
 };
 
 type ChecksConfig = {
+  commitSpecs:
+    | {
+        maxChangedSpecs?: number | undefined;
+        mode: CommitSpecsMode;
+        requireLatest: boolean;
+      }
+    | undefined;
   requireKnownExtension: boolean;
   requireOrderedSections: boolean;
   requireSpecsDirectory: boolean;
@@ -53,10 +64,24 @@ type SpecFile = {
   group: string | undefined;
 };
 
+type ChangedSpecFile = {
+  absolutePath: string;
+  directoryPath: string;
+  displayPath: string;
+  isNew: boolean;
+};
+
 const groupSchema = z.string().trim().min(1);
 
 const configSchema = z.object({
   checks: z.object({
+    commitSpecs: z
+      .object({
+        maxChangedSpecs: z.number().int().positive().optional(),
+        mode: z.enum(['none', 'one', 'any']),
+        requireLatest: z.boolean(),
+      })
+      .optional(),
     requireKnownExtension: z.boolean(),
     requireOrderedSections: z.boolean(),
     requireSpecsDirectory: z.boolean(),
@@ -127,6 +152,10 @@ export class CheckCommand {
         errors.push(...fileErrors);
       })
     );
+
+    if (config.checks.commitSpecs !== undefined) {
+      errors.push(...(await this.validateCommitAwareRules(cwd, config)));
+    }
 
     return { errors };
   }
@@ -220,6 +249,59 @@ export class CheckCommand {
     return [...duplicates];
   }
 
+  private async getGitChangedEntries(
+    cwd: string
+  ): Promise<Array<{ path: string; status: string }>> {
+    try {
+      const { stdout } = await execFileAsync(
+        'git',
+        ['status', '--porcelain', '--untracked-files=all'],
+        { cwd }
+      );
+
+      return stdout
+        .split(/\r?\n/u)
+        .map((line) => line.trimEnd())
+        .filter((line) => line.length > 0)
+        .map((line) => this.parseGitStatusLine(line));
+    } catch {
+      throw new Error('Could not resolve Git context for commit-aware checks.');
+    }
+  }
+
+  private async getLatestTimestampInDirectory(
+    directoryPath: string,
+    format: SpecFormat
+  ): Promise<string | undefined> {
+    const entries = await readdir(directoryPath, { withFileTypes: true });
+    const timestamps = entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((fileName) => this.isRealTimestampSlugFileName(fileName, format))
+      .map((fileName) => this.getTimestampFromFileName(fileName))
+      .filter((timestamp): timestamp is string => timestamp !== undefined);
+
+    return timestamps.sort().at(-1);
+  }
+
+  private getTimestampFromFileName(fileName: string): string | undefined {
+    const match = fileName.match(/^(\d{14})_[a-z0-9]+(?:-[a-z0-9]+)*\.[^.]+$/u);
+    return match?.[1];
+  }
+
+  private isGitAddedStatus(status: string): boolean {
+    return status === '??' || status.includes('A');
+  }
+
+  private isRealTimestampSlugFileName(fileName: string, format: SpecFormat): boolean {
+    if (fileName === `${BOOTSTRAP_SPEC_FILE_BASENAME}.${format}`) {
+      return false;
+    }
+
+    const pattern = new RegExp(`^\\d{14}_[a-z0-9]+(?:-[a-z0-9]+)*\\.${format}$`, 'u');
+    return pattern.test(fileName);
+  }
+
   private isTimestampSlugFileName(fileName: string, format: SpecFormat): boolean {
     if (fileName === `${BOOTSTRAP_SPEC_FILE_BASENAME}.${format}`) {
       return true;
@@ -254,7 +336,12 @@ export class CheckCommand {
       const config = configSchema.parse(parsedConfig);
 
       return {
-        checks: config.checks,
+        checks: {
+          commitSpecs: config.checks.commitSpecs,
+          requireKnownExtension: config.checks.requireKnownExtension,
+          requireOrderedSections: config.checks.requireOrderedSections,
+          requireSpecsDirectory: config.checks.requireSpecsDirectory,
+        },
         specs: {
           format: config.specs.format,
           groups: config.specs.groups,
@@ -268,6 +355,19 @@ export class CheckCommand {
     }
   }
 
+  private parseGitStatusLine(line: string): { path: string; status: string } {
+    const status = line.slice(0, 2);
+    const rawPath = line.slice(3);
+    const pathValue = rawPath.includes(' -> ')
+      ? (rawPath.split(' -> ').at(-1) ?? rawPath)
+      : rawPath;
+
+    return {
+      path: pathValue,
+      status,
+    };
+  }
+
   private async pathExists(targetPath: string): Promise<boolean> {
     try {
       await stat(targetPath);
@@ -277,8 +377,104 @@ export class CheckCommand {
     }
   }
 
+  private toChangedSpecFile(
+    cwd: string,
+    relativePath: string,
+    status: string,
+    config: RepositoryConfig
+  ): ChangedSpecFile | undefined {
+    const normalizedPath = relativePath.replaceAll('\\', '/');
+    const specsRoot = config.specs.root.replaceAll('\\', '/').replace(/\/+$/u, '');
+    const specsRootPrefix = `${specsRoot}/`;
+
+    if (!(normalizedPath === specsRoot || normalizedPath.startsWith(specsRootPrefix))) {
+      return undefined;
+    }
+
+    if (path.extname(normalizedPath) !== `.${config.specs.format}`) {
+      return undefined;
+    }
+
+    return {
+      absolutePath: path.join(cwd, normalizedPath),
+      directoryPath: path.dirname(path.join(cwd, normalizedPath)),
+      displayPath: normalizedPath,
+      isNew: this.isGitAddedStatus(status),
+    };
+  }
+
   private toDisplayPath(basePath: string, targetPath: string): string {
     return path.relative(basePath, targetPath) || targetPath;
+  }
+
+  private async validateCommitAwareRules(cwd: string, config: RepositoryConfig): Promise<string[]> {
+    const commitSpecs = config.checks.commitSpecs;
+
+    if (commitSpecs === undefined) {
+      return [];
+    }
+
+    const changedEntries = await this.getGitChangedEntries(cwd);
+    const changedSpecFiles = changedEntries
+      .map((entry) => this.toChangedSpecFile(cwd, entry.path, entry.status, config))
+      .filter((entry): entry is ChangedSpecFile => entry !== undefined);
+    const errors: string[] = [];
+
+    if (commitSpecs.mode === 'one' && changedSpecFiles.length === 0) {
+      errors.push('Missing required spec change: checks.commitSpecs.mode is "one".');
+    }
+
+    if (commitSpecs.mode === 'none' && changedSpecFiles.length > 0) {
+      errors.push('Unexpected spec change: checks.commitSpecs.mode is "none".');
+    }
+
+    if (
+      commitSpecs.maxChangedSpecs !== undefined &&
+      changedSpecFiles.length > commitSpecs.maxChangedSpecs
+    ) {
+      errors.push(
+        `Too many spec changes: checks.commitSpecs.maxChangedSpecs is ${commitSpecs.maxChangedSpecs}, but found ${changedSpecFiles.length} changed spec files.`
+      );
+    }
+
+    if (!commitSpecs.requireLatest) {
+      return errors;
+    }
+
+    if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
+      errors.push(
+        `Unsupported spec naming for commit-aware check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
+      );
+      return errors;
+    }
+
+    const newSpecFiles = changedSpecFiles.filter((specFile) => specFile.isNew);
+
+    for (const specFile of newSpecFiles) {
+      if (
+        !this.isRealTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)
+      ) {
+        continue;
+      }
+
+      const latestTimestamp = await this.getLatestTimestampInDirectory(
+        specFile.directoryPath,
+        config.specs.format
+      );
+      const currentTimestamp = this.getTimestampFromFileName(path.basename(specFile.absolutePath));
+
+      if (
+        latestTimestamp !== undefined &&
+        currentTimestamp !== undefined &&
+        currentTimestamp < latestTimestamp
+      ) {
+        errors.push(
+          `Spec is not the latest in its directory: ${specFile.displayPath} must be the newest timestamp-slug spec in ${this.toDisplayPath(cwd, specFile.directoryPath)}.`
+        );
+      }
+    }
+
+    return errors;
   }
 
   private validateMarkdownStructure(

@@ -105,6 +105,7 @@ Example:
     "requireKnownExtension": true,
     "commitSpecs": {
       "mode": "any",
+      "maxChangedSpecs": 1,
       "requireLatest": true
     }
   }
@@ -123,22 +124,23 @@ Grouped repositories may extend the config with an optional `specs.groups` list:
 
 Field overview:
 
-| path                               | required | description                                                                                                                                                                                             |
-| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `specs.root`                       | `true`   | defines where repository specs live                                                                                                                                                                     |
-| `specs.format`                     | `true`   | defines the single source of truth for the project spec format; current bootstrap values are `md`, `json`, `html`, and `xml`                                                                            |
-| `specs.language`                   | `true`   | communicates the expected language for LLM-authored specs                                                                                                                                               |
-| `specs.naming`                     | `true`   | defines the filename strategy for specs; supported values are `timestamp-slug`, `slug`, `sequence-slug`, `date-slug`, `datetime-slug`, `group-timestamp-slug`, `timestamp-group-slug`, and `group-slug` |
-| `specs.groups`                     | `false`  | optionally lists the allowed spec groups; when present, `specify-it new` requires `--group` with one of the configured values                                                                           |
-| `specs.sections.order`             | `true`   | defines the canonical section order for markdown-style specs                                                                                                                                            |
-| `specs.sections.required`          | `true`   | lists sections that must exist in every compliant spec                                                                                                                                                  |
-| `specs.sections.optional`          | `true`   | lists sections that may be omitted                                                                                                                                                                      |
-| `agents.syncDocuments`             | `true`   | lists repository documents that should stay aligned with spec and workflow changes                                                                                                                      |
-| `checks.requireSpecsDirectory`     | `true`   | requires the configured specs directory to exist                                                                                                                                                        |
-| `checks.requireOrderedSections`    | `true`   | requires specs to follow the configured section order                                                                                                                                                   |
-| `checks.requireKnownExtension`     | `true`   | requires spec files to match the configured format                                                                                                                                                      |
-| `checks.commitSpecs.mode`          | `true`   | describes commit-level expectations for specs; planned values are `none`, `one`, and `any`                                                                                                              |
-| `checks.commitSpecs.requireLatest` | `true`   | expresses whether a newly added spec in a commit must be the latest spec in `.specs/` by timestamp order                                                                                                |
+| path                                 | required | description                                                                                                                                                                                             |
+| ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `specs.root`                         | `true`   | defines where repository specs live                                                                                                                                                                     |
+| `specs.format`                       | `true`   | defines the single source of truth for the project spec format; current bootstrap values are `md`, `json`, `html`, and `xml`                                                                            |
+| `specs.language`                     | `true`   | communicates the expected language for LLM-authored specs                                                                                                                                               |
+| `specs.naming`                       | `true`   | defines the filename strategy for specs; supported values are `timestamp-slug`, `slug`, `sequence-slug`, `date-slug`, `datetime-slug`, `group-timestamp-slug`, `timestamp-group-slug`, and `group-slug` |
+| `specs.groups`                       | `false`  | optionally lists the allowed spec groups; when present, `specify-it new` requires `--group` with one of the configured values                                                                           |
+| `specs.sections.order`               | `true`   | defines the canonical section order for markdown-style specs                                                                                                                                            |
+| `specs.sections.required`            | `true`   | lists sections that must exist in every compliant spec                                                                                                                                                  |
+| `specs.sections.optional`            | `true`   | lists sections that may be omitted                                                                                                                                                                      |
+| `agents.syncDocuments`               | `true`   | lists repository documents that should stay aligned with spec and workflow changes                                                                                                                      |
+| `checks.requireSpecsDirectory`       | `true`   | requires the configured specs directory to exist                                                                                                                                                        |
+| `checks.requireOrderedSections`      | `true`   | requires specs to follow the configured section order                                                                                                                                                   |
+| `checks.requireKnownExtension`       | `true`   | requires spec files to match the configured format                                                                                                                                                      |
+| `checks.commitSpecs.mode`            | `true`   | describes commit-level expectations for specs; supported values are `none`, `one`, and `any`                                                                                                            |
+| `checks.commitSpecs.maxChangedSpecs` | `false`  | optionally caps how many spec files may be changed in the current Git working set                                                                                                                       |
+| `checks.commitSpecs.requireLatest`   | `true`   | expresses whether a newly added spec in a commit must be the latest spec in its target specs directory by timestamp order                                                                               |
 
 ## New Specs
 
@@ -177,8 +179,13 @@ For grouped repositories, `specs.groups` is expected to use this shape:
 - the first version validates file extensions when `checks.requireKnownExtension` is enabled
 - the first version validates filenames only for `specs.naming = "timestamp-slug"`
 - the first version validates Markdown title and section structure using `specs.sections.*` and `checks.requireOrderedSections`
+- the checker now also supports commit-aware validation through `checks.commitSpecs`
+- `checks.commitSpecs.mode` supports `none`, `one`, and `any` using local Git working tree changes
+- `checks.commitSpecs.maxChangedSpecs` optionally limits how many spec files may be changed at once
+- `checks.commitSpecs.requireLatest` validates that newly added `timestamp-slug` specs are the latest in their target directory
+- the reserved bootstrap example from `specs-it init` is ignored by commit-aware recency checks
 - the first version reports all discovered structural validation errors from the current run
-- the first version does not implement commit-aware validation or `checks.commitSpecs.*`
+- the current version does not implement semantic code-to-spec comparison
 
 Example:
 

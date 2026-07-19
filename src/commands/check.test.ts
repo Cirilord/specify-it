@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -15,6 +16,21 @@ async function createTempDirectory(): Promise<string> {
 
 async function writeConfig(cwd: string, config: unknown): Promise<void> {
   await writeFile(path.join(cwd, 'specify-it.config.json'), `${JSON.stringify(config, null, 2)}\n`);
+}
+
+function runGit(cwd: string, args: string[]): void {
+  execFileSync('git', args, { cwd, stdio: 'ignore' });
+}
+
+function initializeGitRepository(cwd: string): void {
+  runGit(cwd, ['init']);
+  runGit(cwd, ['config', 'user.name', 'Codex']);
+  runGit(cwd, ['config', 'user.email', 'codex@example.com']);
+}
+
+function commitAll(cwd: string, message: string): void {
+  runGit(cwd, ['add', '.']);
+  runGit(cwd, ['-c', 'commit.gpgsign=false', 'commit', '-m', message]);
 }
 
 afterEach(async (): Promise<void> => {
@@ -361,5 +377,473 @@ describe('CheckCommand.run', (): void => {
         'Invalid section order: .specs/20260714213000_add-config-loader.md does not follow the configured section order.',
       ],
     });
+  });
+
+  it('fails when commit-aware checks are enabled but git context is unavailable', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          mode: 'any',
+          requireLatest: false,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+
+    await expect(command.run()).rejects.toThrow(
+      'Could not resolve Git context for commit-aware checks.'
+    );
+  });
+
+  it('fails when mode is one and no spec file is changed', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          mode: 'one',
+          requireLatest: false,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(path.join(cwd, 'notes.txt'), 'base\n', 'utf8');
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(path.join(cwd, 'notes.txt'), 'changed\n', 'utf8');
+
+    await expect(command.run()).resolves.toEqual({
+      errors: ['Missing required spec change: checks.commitSpecs.mode is "one".'],
+    });
+  });
+
+  it('fails when changed spec files exceed maxChangedSpecs', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          maxChangedSpecs: 1,
+          mode: 'any',
+          requireLatest: false,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_first-spec.md'),
+      [
+        '# First Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714214000_second-spec.md'),
+      [
+        '# Second Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(cwd, '.specs/20260714215000_third-spec.md'),
+      [
+        '# Third Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      errors: [
+        'Too many spec changes: checks.commitSpecs.maxChangedSpecs is 1, but found 2 changed spec files.',
+      ],
+    });
+  });
+
+  it('passes when mode is one and maxChangedSpecs is one with a single changed spec file', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          maxChangedSpecs: 1,
+          mode: 'one',
+          requireLatest: false,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(path.join(cwd, 'notes.txt'), 'base\n', 'utf8');
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714214000_single-spec.md'),
+      [
+        '# Single Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({ errors: [] });
+  });
+
+  it('fails when mode is none and a spec file is changed', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          mode: 'none',
+          requireLatest: false,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      [
+        '# Bootstrap Release Workflow',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      [
+        '# Bootstrap Release Workflow',
+        '',
+        '## Objective',
+        '',
+        'updated',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      errors: ['Unexpected spec change: checks.commitSpecs.mode is "none".'],
+    });
+  });
+
+  it('fails when a new spec is not the latest in its directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          mode: 'any',
+          requireLatest: true,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714214000_existing-spec.md'),
+      [
+        '# Existing Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(cwd, '.specs/00000000000000_initial_spec_example.md'),
+      [
+        '# Bootstrap Spec Example',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_new-spec.md'),
+      [
+        '# New Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      errors: [
+        'Spec is not the latest in its directory: .specs/20260714213000_new-spec.md must be the newest timestamp-slug spec in .specs.',
+      ],
+    });
+  });
+
+  it('passes when a new grouped spec is the latest in its own directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs/feat'), { recursive: true });
+    await mkdir(path.join(cwd, '.specs/fix'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          mode: 'one',
+          requireLatest: true,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        groups: ['feat', 'fix'],
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/feat/20260714213000_existing-feat.md'),
+      [
+        '# Existing Feat',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(cwd, '.specs/fix/20260714215000_existing-fix.md'),
+      [
+        '# Existing Fix',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/feat/20260714216000_new-feat.md'),
+      [
+        '# New Feat',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({ errors: [] });
   });
 });
