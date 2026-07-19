@@ -532,8 +532,23 @@ export class CheckCommand {
   ): string[] {
     const errors: string[] = [];
     const lines = content.split(/\r?\n/u);
+    let isInsideCodeFence = false;
     const headings = lines
-      .map((line, index) => ({ index, line: line.trim() }))
+      .map((line, index) => {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine.startsWith('```')) {
+          isInsideCodeFence = !isInsideCodeFence;
+          return undefined;
+        }
+
+        if (isInsideCodeFence) {
+          return undefined;
+        }
+
+        return { index, line: trimmedLine };
+      })
+      .filter((line): line is { index: number; line: string } => line !== undefined)
       .filter(({ line }) => line.startsWith('#'));
 
     const titleHeadings = headings.filter(({ line }) => /^#\s+\S/u.test(line));

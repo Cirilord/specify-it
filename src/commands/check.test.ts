@@ -654,6 +654,65 @@ describe('CheckCommand.run', (): void => {
     });
   });
 
+  it('ignores heading-like lines inside fenced code blocks', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_define_new_command.md'),
+      [
+        '# Define New Command',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '```md',
+        '# Bootstrap Release Workflow',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '```',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 0, checkedSpecs: 1, errors: [] });
+  });
+
   it('fails when commit-aware checks are enabled but git context is unavailable', async (): Promise<void> => {
     const cwd = await createTempDirectory();
     const command = CheckCommand.fromCliOptions({});
