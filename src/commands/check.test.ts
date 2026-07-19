@@ -654,7 +654,7 @@ describe('CheckCommand.run', (): void => {
     });
   });
 
-  it('ignores heading-like lines inside fenced code blocks', async (): Promise<void> => {
+  it('ignores heading-like lines inside fenced code blocks with larger outer fences', async (): Promise<void> => {
     const cwd = await createTempDirectory();
     const command = CheckCommand.fromCliOptions({});
     Reflect.set(command, 'cwd', cwd);
@@ -690,6 +690,17 @@ describe('CheckCommand.run', (): void => {
         '',
         '## Examples',
         '',
+        '````md',
+        '# Define New Command',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
         '```md',
         '# Bootstrap Release Workflow',
         '',
@@ -703,6 +714,7 @@ describe('CheckCommand.run', (): void => {
         '',
         '## Acceptance Criteria',
         '```',
+        '````',
         '',
         '## Acceptance Criteria',
         '',

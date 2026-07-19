@@ -79,6 +79,7 @@ The project now separates the importable CLI module from the executable process 
 - `yarn start -- list --json` prints machine-readable spec inventory output
 - `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
 - `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
+- Markdown structure validation is backed by `commonmark` so fenced examples do not create false-positive heading errors
 
 The first implemented CLI commands are `specify-it init` and `specify-it new`.
 The first implemented CLI commands are `specify-it init`, `specify-it new`, and `specify-it check`.

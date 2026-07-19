@@ -1,3 +1,4 @@
+import { type Node, Parser } from 'commonmark';
 import { execFile } from 'node:child_process';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -17,6 +18,7 @@ import {
 const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
 const CONFIG_FILE_NAME = 'specify-it.config.json';
 const execFileAsync = promisify(execFile);
+const markdownParser = new Parser();
 
 type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
 type CommitSpecsMode = 'none' | 'one' | 'any';
@@ -73,6 +75,12 @@ type ChangedSpecFile = {
   directoryPath: string;
   displayPath: string;
   isNew: boolean;
+};
+
+type MarkdownHeading = {
+  level: number;
+  lineIndex: number;
+  text: string;
 };
 
 const groupSchema = z.string().trim().min(1);
@@ -332,6 +340,48 @@ export class CheckCommand {
     return timestamps.sort().at(-1);
   }
 
+  private getMarkdownHeadings(content: string): MarkdownHeading[] {
+    const document = markdownParser.parse(content);
+    const headings: MarkdownHeading[] = [];
+    const walker = document.walker();
+    let event = walker.next();
+
+    while (event !== null) {
+      if (event.entering && event.node.type === 'heading') {
+        headings.push({
+          lineIndex: Math.max(0, event.node.sourcepos[0][0] - 1),
+          level: event.node.level,
+          text: this.getNodeText(event.node).trim(),
+        });
+      }
+
+      event = walker.next();
+    }
+
+    return headings;
+  }
+
+  private getNodeText(node: Node): string {
+    let text = '';
+    let child = node.firstChild;
+
+    while (child !== null) {
+      if (child.literal !== null) {
+        text += child.literal;
+      } else if (child.firstChild !== null) {
+        text += this.getNodeText(child);
+      }
+
+      if (child.type === 'softbreak' || child.type === 'linebreak') {
+        text += ' ';
+      }
+
+      child = child.next;
+    }
+
+    return text;
+  }
+
   private getTimestampFromFileName(fileName: string): string | undefined {
     const match = fileName.match(/^(\d{14})_[a-z0-9]+(?:_[a-z0-9]+)*\.[^.]+$/u);
     return match?.[1];
@@ -532,31 +582,13 @@ export class CheckCommand {
   ): string[] {
     const errors: string[] = [];
     const lines = content.split(/\r?\n/u);
-    let isInsideCodeFence = false;
-    const headings = lines
-      .map((line, index) => {
-        const trimmedLine = line.trim();
-
-        if (trimmedLine.startsWith('```')) {
-          isInsideCodeFence = !isInsideCodeFence;
-          return undefined;
-        }
-
-        if (isInsideCodeFence) {
-          return undefined;
-        }
-
-        return { index, line: trimmedLine };
-      })
-      .filter((line): line is { index: number; line: string } => line !== undefined)
-      .filter(({ line }) => line.startsWith('#'));
-
-    const titleHeadings = headings.filter(({ line }) => /^#\s+\S/u.test(line));
+    const headings = this.getMarkdownHeadings(content);
+    const titleHeadings = headings.filter(({ level, text }) => level === 1 && text.length > 0);
     if (titleHeadings.length === 0) {
       errors.push(`Missing title heading: ${displayPath} must start with a "# ..." heading.`);
       return errors;
     }
-    if (titleHeadings[0]?.index !== lines.findIndex((line) => line.trim().length > 0)) {
+    if (titleHeadings[0]?.lineIndex !== lines.findIndex((line) => line.trim().length > 0)) {
       errors.push(`Invalid title position: ${displayPath} must start with the title heading.`);
     }
     if (titleHeadings.length > 1) {
@@ -564,8 +596,8 @@ export class CheckCommand {
     }
 
     const sectionHeadings = headings
-      .filter(({ line }) => /^##\s+\S/u.test(line))
-      .map(({ line }) => line.replace(/^##\s+/u, ''));
+      .filter(({ level, text }) => level === 2 && text.length > 0)
+      .map(({ text }) => text);
     const allowedSections = new Set(sections.order.filter((section) => section !== 'Title'));
     for (const sectionHeading of sectionHeadings) {
       if (!allowedSections.has(sectionHeading)) {
