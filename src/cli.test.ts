@@ -27,7 +27,7 @@ type ListJsonOutput = {
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectoryPath = path.dirname(currentFilePath);
-const cliEntrypointPath = path.join(currentDirectoryPath, 'index.ts');
+const cliEntrypointPath = path.join(currentDirectoryPath, 'bin.ts');
 const repositoryRootPath = path.dirname(currentDirectoryPath);
 const tsxLoaderPath = path.join(repositoryRootPath, 'node_modules/tsx/dist/loader.mjs');
 

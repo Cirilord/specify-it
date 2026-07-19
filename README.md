@@ -59,12 +59,15 @@ Local hooks:
 
 ## Source
 
-The project now uses `src/index.ts` as the initial TypeScript entrypoint.
+The project now separates the importable CLI module from the executable process entrypoint.
 
 - `yarn type-check` validates the source tree without emitting files
 - `yarn build` emits runnable output to `dist/`
 - `yarn start` runs the built output
-- `yarn start:dev` runs the source entrypoint directly during development
+- `yarn start:dev` runs the source bin entrypoint directly during development
+- `src/cli.ts` exports the reusable CLI runner without process side effects
+- `src/bin.ts` is the dedicated executable entrypoint used by the npm `bin`
+- the published package exposes `specify-it/cli` as its current importable API surface
 - the CLI now uses `cac` as its command-line foundation
 - `yarn start -- --help` shows the current CLI help output
 - `yarn start -- init` bootstraps `.specs/` and `specify-it.config.json`
@@ -233,9 +236,8 @@ The release workflow runs these quality gates before creating a release:
 The package is prepared for public npm publication by:
 
 - publishing built files from `dist/`
-- exposing `dist/index.js` as the package entrypoint
-- exposing `dist/index.d.ts` as the package type definition entrypoint
-- exposing the CLI binary through the npm-compatible named `bin` manifest form
+- exposing `dist/cli.js` and `dist/cli.d.ts` through the `specify-it/cli` subpath export
+- exposing `dist/bin.js` as the dedicated CLI binary through the npm-compatible named `bin` manifest form
 - publishing `README.md` and `LICENSE` alongside the built output
 
 ## Tests

@@ -5,12 +5,10 @@
   "license": "MIT",
   "type": "module",
   "packageManager": "yarn@1.22.22",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "default": "./dist/cli.js"
     }
   },
   "files": [
@@ -23,13 +21,13 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bin": {
-    "specify-it": "dist/index.js"
+    "specify-it": "dist/bin.js"
   },
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "tsc --project tsconfig.build.json",
-    "start": "node dist/index.js",
-    "start:dev": "node --import tsx src/index.ts",
+    "start": "node dist/bin.js",
+    "start:dev": "node --import tsx src/bin.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --fix",
