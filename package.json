@@ -1,6 +1,6 @@
 {
   "name": "specify-it",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "CLI and validation tooling for spec-driven workflows.",
   "license": "MIT",
   "type": "module",
