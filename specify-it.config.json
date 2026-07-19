@@ -1,0 +1,26 @@
+{
+  "specs": {
+    "root": ".specs",
+    "format": "md",
+    "language": "en",
+    "naming": "timestamp-slug",
+    "sections": {
+      "order": ["Title", "Objective", "Scope", "Design", "Examples", "Acceptance Criteria"],
+      "required": ["Objective", "Scope", "Design", "Acceptance Criteria"],
+      "optional": ["Examples"]
+    }
+  },
+  "agents": {
+    "syncDocuments": ["AGENTS.md", "README.md"]
+  },
+  "checks": {
+    "requireSpecsDirectory": true,
+    "requireOrderedSections": true,
+    "requireKnownExtension": true,
+    "commitSpecs": {
+      "mode": "one",
+      "maxChangedSpecs": 1,
+      "requireLatest": true
+    }
+  }
+}

@@ -37,6 +37,8 @@ The repository uses a small Node-based tooling stack for deterministic local che
 
 Install dependencies with `yarn install`.
 
+The repository also installs the published `specify-it` package locally as a devDependency so local hooks exercise the released CLI, not only the in-repo source implementation.
+
 Common commands:
 
 - `yarn build`
@@ -50,11 +52,12 @@ Common commands:
 - `yarn test:cov`
 - `yarn type-check`
 - `yarn release`
+- `yarn specify-it:check`
 - `yarn commit-lint --edit .git/COMMIT_EDITMSG`
 
 Local hooks:
 
-- `pre-commit` runs `lint` and `format:check`
+- `pre-commit` runs `yarn specify-it:check`, `lint`, `format:check`, and `type-check`
 - `commit-msg` runs `commit-lint`
 
 ## Source
@@ -87,6 +90,8 @@ The first implemented CLI commands are `specify-it init`, `specify-it new`, and 
 ## Config
 
 `specify-it init` generates a `specify-it.config.json` file that describes the repository spec contract.
+
+This repository also commits its own `specify-it.config.json` so local hooks and manual validation use a stable deterministic config.
 
 Example:
 

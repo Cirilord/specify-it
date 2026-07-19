@@ -37,6 +37,8 @@
     "test:e2e": "node --eval \"\"",
     "release": "release-it",
     "release:version": "release-it --only-version",
+    "specify-it": "specify-it",
+    "specify-it:check": "specify-it check",
     "prepare": "lefthook install || true",
     "commit-lint": "commitlint",
     "type-check": "tsc --noEmit --project tsconfig.json"
@@ -59,6 +61,7 @@
     "prettier": "^3.6.2",
     "release-it": "^19.0.4",
     "rimraf": "^6.0.1",
+    "specify-it": "^0.3.2",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.48.1",

@@ -6,6 +6,8 @@ pre-commit:
     lint-check:
       run: yarn lint:check
       stage_fixed: true
+    specify-it-check:
+      run: yarn specify-it:check
     type-check:
       run: yarn type-check
 
