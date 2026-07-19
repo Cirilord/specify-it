@@ -71,6 +71,7 @@ The project now uses `src/index.ts` as the initial TypeScript entrypoint.
 - `yarn start -- init --bare` creates only the minimum structure
 - `yarn start -- init --format=json` changes the generated spec example format
 - `yarn start -- check` validates repository specs against the repository configuration
+- `yarn start -- check --json` prints machine-readable validation output for hooks, CI, and agents
 - `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
 - `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
 
@@ -183,6 +184,7 @@ For grouped repositories, `specs.groups` is expected to use this shape:
 - `checks.commitSpecs.mode` supports `none`, `one`, and `any` using local Git working tree changes
 - `checks.commitSpecs.maxChangedSpecs` optionally limits how many spec files may be changed at once
 - `checks.commitSpecs.requireLatest` validates that newly added `timestamp-slug` specs are the latest in their target directory
+- `--json` prints a JSON object with `ok`, `errors`, `checkedSpecs`, and `changedSpecs`
 - the reserved bootstrap example from `specs-it init` is ignored by commit-aware recency checks
 - the first version reports all discovered structural validation errors from the current run
 - the current version does not implement semantic code-to-spec comparison

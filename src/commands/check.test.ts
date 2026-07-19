@@ -49,15 +49,29 @@ describe('CheckCommand', (): void => {
 
 describe('CheckCommand.getSummary', (): void => {
   it('formats a successful result', (): void => {
-    expect(CheckCommand.getSummary({ errors: [] })).toContain('Repository passed validation.');
+    expect(CheckCommand.getSummary({ changedSpecs: 0, checkedSpecs: 0, errors: [] })).toContain(
+      'Repository passed validation.'
+    );
   });
 
   it('formats error results line by line', (): void => {
     expect(
       CheckCommand.getSummary({
+        changedSpecs: 0,
+        checkedSpecs: 0,
         errors: ['error one', 'error two'],
       })
     ).toContain('error one\nerror two');
+  });
+
+  it('formats a json result', (): void => {
+    expect(
+      CheckCommand.getJsonSummary({
+        changedSpecs: 1,
+        checkedSpecs: 3,
+        errors: ['error one'],
+      })
+    ).toContain('"ok": false');
   });
 });
 
@@ -104,7 +118,7 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
 
-    await expect(command.run()).resolves.toEqual({ errors: [] });
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 0, checkedSpecs: 1, errors: [] });
   });
 
   it('accepts the reserved bootstrap spec filename from init', async (): Promise<void> => {
@@ -149,7 +163,7 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
 
-    await expect(command.run()).resolves.toEqual({ errors: [] });
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 0, checkedSpecs: 1, errors: [] });
   });
 
   it('fails when the config file is missing', async (): Promise<void> => {
@@ -184,6 +198,8 @@ describe('CheckCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 0,
       errors: ['Missing specs directory: .specs'],
     });
   });
@@ -218,6 +234,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
       errors: [
         'Invalid spec extension: .specs/invalid_name.txt must use .md.',
         'Invalid spec filename: .specs/invalid_name.txt must match YYYYMMDDHHMMSS_slug.md.',
@@ -253,6 +271,8 @@ describe('CheckCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 0,
       errors: [
         'Invalid spec path: .specs/feat must not be nested when specs.groups is not configured.',
       ],
@@ -291,6 +311,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 0,
       errors: [
         'Invalid spec path: .specs/feat/nested must live directly under the configured group directory.',
         'Invalid spec group directory: .specs/misc is not one of: feat, fix',
@@ -323,6 +345,8 @@ describe('CheckCommand.run', (): void => {
     });
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 0,
       errors: [
         'Unsupported spec naming for check: slug. Only timestamp-slug is currently supported.',
       ],
@@ -372,6 +396,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
       errors: [
         'Invalid section heading: .specs/20260714213000_add-config-loader.md contains unsupported section "Notes".',
         'Invalid section order: .specs/20260714213000_add-config-loader.md does not follow the configured section order.',
@@ -445,6 +471,8 @@ describe('CheckCommand.run', (): void => {
     await writeFile(path.join(cwd, 'notes.txt'), 'changed\n', 'utf8');
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 0,
       errors: ['Missing required spec change: checks.commitSpecs.mode is "one".'],
     });
   });
@@ -535,6 +563,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 2,
+      checkedSpecs: 3,
       errors: [
         'Too many spec changes: checks.commitSpecs.maxChangedSpecs is 1, but found 2 changed spec files.',
       ],
@@ -591,7 +621,7 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
 
-    await expect(command.run()).resolves.toEqual({ errors: [] });
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 1, checkedSpecs: 1, errors: [] });
   });
 
   it('fails when mode is none and a spec file is changed', async (): Promise<void> => {
@@ -663,6 +693,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 1,
+      checkedSpecs: 1,
       errors: ['Unexpected spec change: checks.commitSpecs.mode is "none".'],
     });
   });
@@ -752,6 +784,8 @@ describe('CheckCommand.run', (): void => {
     );
 
     await expect(command.run()).resolves.toEqual({
+      changedSpecs: 1,
+      checkedSpecs: 3,
       errors: [
         'Spec is not the latest in its directory: .specs/20260714213000_new-spec.md must be the newest timestamp-slug spec in .specs.',
       ],
@@ -844,6 +878,6 @@ describe('CheckCommand.run', (): void => {
       'utf8'
     );
 
-    await expect(command.run()).resolves.toEqual({ errors: [] });
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 1, checkedSpecs: 3, errors: [] });
   });
 });

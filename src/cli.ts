@@ -19,14 +19,31 @@ export function createCli(): ReturnType<typeof cac> {
 
   cli
     .command('check', 'Validate repository specs against the repository configuration')
+    .option('--json', 'Print the result as JSON')
     .example('specify-it check')
+    .example('specify-it check --json')
     .action(async (options) => {
       const command = CheckCommand.fromCliOptions(options);
-      const result = await command.run();
+      try {
+        const result = await command.run();
+        console.info(
+          command.json ? CheckCommand.getJsonSummary(result) : CheckCommand.getSummary(result)
+        );
 
-      console.info(CheckCommand.getSummary(result));
+        if (result.errors.length > 0) {
+          process.exitCode = 1;
+        }
+      } catch (error) {
+        if (!command.json) {
+          throw error;
+        }
 
-      if (result.errors.length > 0) {
+        const result = {
+          changedSpecs: 0,
+          checkedSpecs: 0,
+          errors: [error instanceof Error ? error.message : 'Unknown CLI error'],
+        };
+        console.info(CheckCommand.getJsonSummary(result));
         process.exitCode = 1;
       }
     });

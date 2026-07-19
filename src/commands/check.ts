@@ -25,7 +25,14 @@ type SpecNaming = (typeof SUPPORTED_SPEC_NAMINGS)[number];
 type CommitSpecsMode = 'none' | 'one' | 'any';
 
 type CheckResult = {
+  changedSpecs: number;
+  checkedSpecs: number;
   errors: string[];
+};
+
+type CheckOptions = {
+  cwd: string | undefined;
+  json: boolean;
 };
 
 type SpecsConfig = {
@@ -101,9 +108,11 @@ const configSchema = z.object({
 
 export class CheckCommand {
   public readonly cwd: string | undefined;
+  public readonly json: boolean;
 
-  private constructor(cwd: string | undefined) {
-    this.cwd = cwd;
+  private constructor(options: CheckOptions) {
+    this.cwd = options.cwd;
+    this.json = options.json;
   }
 
   public static fromCliOptions(options: unknown): CheckCommand {
@@ -111,7 +120,30 @@ export class CheckCommand {
       throw new Error('Invalid check options.');
     }
 
-    return new CheckCommand(undefined);
+    const json =
+      options !== undefined &&
+      typeof options === 'object' &&
+      options !== null &&
+      'json' in options &&
+      options.json === true;
+
+    return new CheckCommand({
+      cwd: undefined,
+      json,
+    });
+  }
+
+  public static getJsonSummary(result: CheckResult): string {
+    return `${JSON.stringify(
+      {
+        changedSpecs: result.changedSpecs,
+        checkedSpecs: result.checkedSpecs,
+        errors: result.errors,
+        ok: result.errors.length === 0,
+      },
+      null,
+      2
+    )}\n`;
   }
 
   public static getSummary(result: CheckResult): string {
@@ -131,21 +163,34 @@ export class CheckCommand {
 
     if (config.checks.requireSpecsDirectory && !specsRootExists) {
       errors.push(`Missing specs directory: ${config.specs.root}`);
-      return { errors };
+      return {
+        changedSpecs: 0,
+        checkedSpecs: 0,
+        errors,
+      };
     }
 
     if (!specsRootExists) {
-      return { errors };
+      return {
+        changedSpecs: 0,
+        checkedSpecs: 0,
+        errors,
+      };
     }
 
     if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
       errors.push(
         `Unsupported spec naming for check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
       );
-      return { errors };
+      return {
+        changedSpecs: 0,
+        checkedSpecs: 0,
+        errors,
+      };
     }
 
     const specFiles = await this.collectSpecFiles(cwd, specsRootPath, config.specs.groups, errors);
+    let changedSpecs = 0;
     await Promise.all(
       specFiles.map(async (specFile) => {
         const fileErrors = await this.validateSpecFile(specFile, config);
@@ -154,10 +199,16 @@ export class CheckCommand {
     );
 
     if (config.checks.commitSpecs !== undefined) {
-      errors.push(...(await this.validateCommitAwareRules(cwd, config)));
+      const commitAwareResult = await this.validateCommitAwareRules(cwd, config);
+      changedSpecs = commitAwareResult.changedSpecs;
+      errors.push(...commitAwareResult.errors);
     }
 
-    return { errors };
+    return {
+      changedSpecs,
+      checkedSpecs: specFiles.length,
+      errors,
+    };
   }
 
   private async collectSpecFiles(
@@ -407,11 +458,18 @@ export class CheckCommand {
     return path.relative(basePath, targetPath) || targetPath;
   }
 
-  private async validateCommitAwareRules(cwd: string, config: RepositoryConfig): Promise<string[]> {
+  private async validateCommitAwareRules(
+    cwd: string,
+    config: RepositoryConfig
+  ): Promise<CheckResult> {
     const commitSpecs = config.checks.commitSpecs;
 
     if (commitSpecs === undefined) {
-      return [];
+      return {
+        changedSpecs: 0,
+        checkedSpecs: 0,
+        errors: [],
+      };
     }
 
     const changedEntries = await this.getGitChangedEntries(cwd);
@@ -438,14 +496,22 @@ export class CheckCommand {
     }
 
     if (!commitSpecs.requireLatest) {
-      return errors;
+      return {
+        changedSpecs: changedSpecFiles.length,
+        checkedSpecs: 0,
+        errors,
+      };
     }
 
     if (config.specs.naming !== TIMESTAMP_SLUG_NAMING) {
       errors.push(
         `Unsupported spec naming for commit-aware check: ${config.specs.naming}. Only ${TIMESTAMP_SLUG_NAMING} is currently supported.`
       );
-      return errors;
+      return {
+        changedSpecs: changedSpecFiles.length,
+        checkedSpecs: 0,
+        errors,
+      };
     }
 
     const newSpecFiles = changedSpecFiles.filter((specFile) => specFile.isNew);
@@ -474,7 +540,11 @@ export class CheckCommand {
       }
     }
 
-    return errors;
+    return {
+      changedSpecs: changedSpecFiles.length,
+      checkedSpecs: 0,
+      errors,
+    };
   }
 
   private validateMarkdownStructure(

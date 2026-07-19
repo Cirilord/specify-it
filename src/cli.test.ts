@@ -7,6 +7,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { createCli } from './cli.js';
 
+type CheckJsonOutput = {
+  changedSpecs: number;
+  checkedSpecs: number;
+  errors: string[];
+  ok: boolean;
+};
+
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectoryPath = path.dirname(currentFilePath);
 const cliEntrypointPath = path.join(currentDirectoryPath, 'index.ts');
@@ -34,6 +41,10 @@ function runCliProcess(args: string[], cwd = process.cwd()): SpawnSyncReturns<st
     cwd,
     encoding: 'utf8',
   });
+}
+
+function parseCheckJsonOutput(stdout: string): CheckJsonOutput {
+  return JSON.parse(stdout) as CheckJsonOutput;
 }
 
 describe('createCli', (): void => {
@@ -143,6 +154,65 @@ describe('CLI process', (): void => {
     expect(result.stdout).toContain('Repository passed validation.');
   });
 
+  it('runs check through the CLI with json output', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          checks: {
+            requireKnownExtension: true,
+            requireOrderedSections: true,
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            naming: 'timestamp-slug',
+            root: '.specs',
+            sections: {
+              optional: ['Examples'],
+              order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+              required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+            },
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_bootstrap-release-workflow.md'),
+      [
+        '# Bootstrap Release Workflow',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    const result = runCliProcess(['check', '--json'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(parseCheckJsonOutput(result.stdout)).toEqual({
+      changedSpecs: 0,
+      checkedSpecs: 1,
+      errors: [],
+      ok: true,
+    });
+  });
+
   it('returns a non-zero exit code when check finds validation errors', async (): Promise<void> => {
     const cwd = await createTempDirectory();
 
@@ -178,6 +248,22 @@ describe('CLI process', (): void => {
 
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('Invalid spec filename');
+  });
+
+  it('returns json output for handled check command errors', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    const result = runCliProcess(['check', '--json'], cwd);
+
+    expect(result.status).toBe(1);
+    const payload = parseCheckJsonOutput(result.stdout);
+
+    expect(payload.changedSpecs).toBe(0);
+    expect(payload.checkedSpecs).toBe(0);
+    expect(payload.ok).toBe(false);
+    expect(payload.errors).toEqual([
+      expect.stringContaining('Could not find specify-it.config.json in '),
+    ]);
   });
 
   it('returns an error when new is missing the title flag', async (): Promise<void> => {
