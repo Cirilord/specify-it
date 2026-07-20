@@ -274,6 +274,7 @@ The repository is prepared for manual releases with `release-it`.
 - the repository must define `NPM_TOKEN` as a GitHub Actions secret before npm publication can succeed
 - the workflow writes npm authentication explicitly into the npm config file used by the runner before running `release-it` so npm validation and publish steps share the same credentials
 - `release-it` skips its redundant npm preflight auth checks because the workflow already verifies npm authentication explicitly with `npm whoami`
+- `release-it` uses `--no-verify` on its automated version commit so local pre-commit hooks do not block mechanical release metadata updates
 - the package manifest pins npm publication to `https://registry.npmjs.org/` so releases do not inherit an unintended registry from the Yarn environment
 
 The release workflow runs these quality gates before creating a release:
