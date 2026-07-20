@@ -80,12 +80,12 @@ The project now separates the importable CLI module from the executable process 
 - `yarn start -- check --json` prints machine-readable validation output for hooks, CI, and agents
 - `yarn start -- list` enumerates repository specs from the configured repository layout
 - `yarn start -- list --json` prints machine-readable spec inventory output
+- `yarn start -- print-config --json` prints the resolved repository configuration for tools and agents
 - `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
 - `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
 - Markdown structure validation is backed by `commonmark` so fenced examples do not create false-positive heading errors
 
-The first implemented CLI commands are `specify-it init` and `specify-it new`.
-The first implemented CLI commands are `specify-it init`, `specify-it new`, and `specify-it check`.
+The first implemented CLI commands are `specify-it init`, `specify-it new`, `specify-it check`, `specify-it list`, and `specify-it print-config`.
 
 ## Config
 
@@ -218,6 +218,23 @@ specify-it check
 - the command supports text output and `--json`
 - grouped repositories include group metadata in the JSON result
 - invalid repository layout or invalid filename shape causes the command to fail clearly
+
+## Print Config
+
+`specify-it print-config --json` prints the resolved repository configuration from `specify-it.config.json`.
+
+- the first version only supports `--json`
+- the command returns the effective `specs`, `agents`, and `checks` sections
+- the command uses the same repository config file as the other deterministic commands
+- the command fails clearly when the config file is missing, malformed, or schema-invalid
+- this output is intended as the deterministic base layer for tools and agents
+
+Example:
+
+```bash
+specify-it print-config --json
+```
+
 - when `checks.requireSpecsDirectory` is `false` and the specs root is missing, the command returns an empty result
 
 ## Release

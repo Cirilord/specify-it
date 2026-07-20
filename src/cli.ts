@@ -5,8 +5,9 @@ import { CheckCommand } from './commands/check.js';
 import { InitCommand } from './commands/init.js';
 import { ListCommand } from './commands/list.js';
 import { NewCommand } from './commands/new.js';
+import { PrintConfigCommand } from './commands/print-config.js';
 
-const SUPPORTED_COMMANDS = new Set(['check', 'init', 'list', 'new']);
+const SUPPORTED_COMMANDS = new Set(['check', 'init', 'list', 'new', 'print-config']);
 
 export function createCli(): ReturnType<typeof cac> {
   const cli = cac('specify-it');
@@ -92,6 +93,17 @@ export function createCli(): ReturnType<typeof cac> {
       const result = await command.run();
 
       console.info(NewCommand.getSummary(result));
+    });
+
+  cli
+    .command('print-config', 'Print the resolved repository configuration')
+    .option('--json', 'Print the resolved configuration as JSON')
+    .example('specify-it print-config --json')
+    .action(async (options) => {
+      const command = PrintConfigCommand.fromCliOptions(options);
+      const result = await command.run();
+
+      console.info(PrintConfigCommand.getSummary(result));
     });
 
   return cli;

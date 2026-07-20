@@ -25,6 +25,34 @@ type ListJsonOutput = {
   }>;
 };
 
+type PrintConfigJsonOutput = {
+  agents: {
+    syncDocuments: string[];
+  };
+  checks: {
+    commitSpecs?: {
+      maxChangedSpecs?: number;
+      mode: string;
+      requireLatest: boolean;
+    };
+    requireKnownExtension: boolean;
+    requireOrderedSections: boolean;
+    requireSpecsDirectory: boolean;
+  };
+  specs: {
+    format: string;
+    groups?: string[];
+    language: string;
+    naming: string;
+    root: string;
+    sections: {
+      optional: string[];
+      order: string[];
+      required: string[];
+    };
+  };
+};
+
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectoryPath = path.dirname(currentFilePath);
 const cliEntrypointPath = path.join(currentDirectoryPath, 'bin.ts');
@@ -62,6 +90,10 @@ function parseListJsonOutput(stdout: string): ListJsonOutput {
   return JSON.parse(stdout) as ListJsonOutput;
 }
 
+function parsePrintConfigJsonOutput(stdout: string): PrintConfigJsonOutput {
+  return JSON.parse(stdout) as PrintConfigJsonOutput;
+}
+
 describe('createCli', (): void => {
   it('creates the specify-it CLI instance', (): void => {
     const cli = createCli();
@@ -88,6 +120,7 @@ describe('CLI process', (): void => {
     expect(result.stdout).toContain('specify-it init');
     expect(result.stdout).toContain('specify-it list');
     expect(result.stdout).toContain('specify-it new');
+    expect(result.stdout).toContain('specify-it print-config');
   });
 
   it('returns an error for an unknown command', (): void => {
@@ -393,6 +426,84 @@ describe('CLI process', (): void => {
     expect(payload.errors).toEqual([
       expect.stringContaining('Could not find specify-it.config.json in '),
     ]);
+  });
+
+  it('returns an error when print-config is missing the json flag', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    const result = runCliProcess(['print-config'], cwd);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('print-config currently requires --json.');
+  });
+
+  it('runs print-config through the CLI with json output', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+
+    await writeFile(
+      path.join(cwd, 'specify-it.config.json'),
+      `${JSON.stringify(
+        {
+          agents: {
+            syncDocuments: ['AGENTS.md', 'README.md'],
+          },
+          checks: {
+            commitSpecs: {
+              maxChangedSpecs: 1,
+              mode: 'one',
+              requireLatest: true,
+            },
+            requireKnownExtension: true,
+            requireOrderedSections: true,
+            requireSpecsDirectory: true,
+          },
+          specs: {
+            format: 'md',
+            language: 'en',
+            naming: 'timestamp-slug',
+            root: '.specs',
+            sections: {
+              optional: ['Examples'],
+              order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+              required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+            },
+          },
+        },
+        null,
+        2
+      )}\n`,
+      'utf8'
+    );
+
+    const result = runCliProcess(['print-config', '--json'], cwd);
+
+    expect(result.status).toBe(0);
+    expect(parsePrintConfigJsonOutput(result.stdout)).toEqual({
+      agents: {
+        syncDocuments: ['AGENTS.md', 'README.md'],
+      },
+      checks: {
+        commitSpecs: {
+          maxChangedSpecs: 1,
+          mode: 'one',
+          requireLatest: true,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        language: 'en',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
   });
 
   it('returns an error when new is missing the title flag', async (): Promise<void> => {
