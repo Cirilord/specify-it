@@ -24,6 +24,7 @@ The project should treat deterministic checks and LLM-assisted reasoning as comp
 - `AGENTS.md` defines collaboration and spec-writing rules for contributors and coding agents
 - `IDEA.md` captures early-stage product direction and open questions
 - `.specs/` stores implementation-ready and approved specs
+- `skills/` stores the official agent-facing skills shipped with the project
 
 ## Tooling
 
@@ -86,6 +87,31 @@ The project now separates the importable CLI module from the executable process 
 - Markdown structure validation is backed by `commonmark` so fenced examples do not create false-positive heading errors
 
 The first implemented CLI commands are `specify-it init`, `specify-it new`, `specify-it check`, `specify-it list`, and `specify-it print-config`.
+
+## Agent Skills
+
+`specify-it` now ships its first official agent-facing skill for assisted spec creation.
+
+- `skills/creating-specs-with-specify-it/` is an official portable skill for repositories that use `specify-it`
+- the skill reads the repository contract with `npx specify-it print-config --json`
+- the skill creates the scaffold with `npx specify-it new`
+- the skill treats `npx specify-it check` as final validation, not an every-edit loop
+- the first version is intentionally narrow and only covers creating a new spec draft
+
+For agents or environments without native skill support, use this fallback guidance in repository instructions such as `AGENTS.md`:
+
+```md
+## specify-it skill fallback
+
+When asked to create a new spec in this repository:
+
+- read the repository contract with `npx specify-it print-config --json`
+- create the spec scaffold with `npx specify-it new`
+- do not invent filenames or spec paths manually
+- draft the spec content inside the generated scaffold
+- run `npx specify-it check` before finishing when final validation is needed
+- if the check fails, fix the spec and run the check again
+```
 
 ## Config
 
