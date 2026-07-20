@@ -1,123 +1,204 @@
-# specify-it
+<div align="center">
+  <h1>Specify It!</h1>
+  <img src="./assets/banner.png" alt="Specify It!" width="900" />
+  <br />
+  <br />
+  <a href="https://www.npmjs.com/package/specify-it"><img src="https://img.shields.io/npm/v/specify-it.svg?style=flat" alt="npm version" /></a>
+  <a href="https://github.com/Cirilord/specify-it/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license" /></a>
+  <a href="https://github.com/Cirilord/specify-it/actions"><img src="https://img.shields.io/github/actions/workflow/status/Cirilord/specify-it/release.yml?branch=main" alt="GitHub Actions" /></a>
+  <a href="https://github.com/Cirilord/specify-it/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs welcome" /></a>
+  <br />
+  <br />
+  <a href="#getting-started">Quickstart</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#core-commands">Commands</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#configuration">Configuration</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#agent-skills">Agent Skills</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="#release">Release</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/Cirilord/specify-it">GitHub</a>
+  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
+  <a href="https://github.com/Cirilord/specify-it/issues">Issues</a>
+  <br />
+  <hr />
+</div>
 
-`specify-it` is a planned CLI and validation library for standardizing spec-driven workflows across repositories.
+Standardize how your repository creates, names, validates, and shares specs across humans, hooks, CI, and agents.
 
-## Goals
+## What is Specify It!
 
-- standardize where specs live
-- standardize how spec files are named
-- provide a CLI to initialize and generate specs
-- provide non-LLM validation for local hooks and CI
-- prepare machine-readable rules that agents and LLMs can follow
+`specify-it` helps teams define a clear repository contract for specs.
 
-## Product Model
+Instead of letting every repository invent its own structure, naming, and validation rules, `specify-it` gives you a deterministic workflow that works for:
 
-`specify-it` is expected to combine deterministic commands with agent-facing skills.
+- humans writing specs
+- local Git hooks
+- CI pipelines
+- agent and LLM tooling
 
-- commands handle structural validation and objective context gathering
-- skills handle semantic review and reconciliation between specs and code
+It currently provides:
 
-The project should treat deterministic checks and LLM-assisted reasoning as complementary parts of the same workflow rather than as competing approaches.
+- `specify-it init` to bootstrap a repository contract
+- `specify-it new` to create new spec scaffolds
+- `specify-it check` to validate repository specs
+- `specify-it list` to enumerate known specs
+- `specify-it print-config --json` to expose the resolved repository contract for tools and agents
+- official agent-facing skills for assisted spec workflows
 
-## Documentation Map
+## Getting Started
 
-- `AGENTS.md` defines collaboration and spec-writing rules for contributors and coding agents
-- `IDEA.md` captures early-stage product direction and open questions
-- `.specs/` stores implementation-ready and approved specs
-- `skills/` stores the official agent-facing skills shipped with the project
+Install `specify-it` as a development dependency:
 
-## Tooling
-
-The repository uses a small Node-based tooling stack for deterministic local checks.
-
-- `ESLint` validates JavaScript and configuration files
-- `Prettier` handles formatting for repository files
-- `commitlint` enforces the documented `type(scope): message` commit format
-- `lefthook` runs the selected checks during the local Git workflow
-- `TypeScript` powers the initial source entrypoint and build flow
-
-Install dependencies with `yarn install`.
-
-The repository also installs the published `specify-it` package locally as a devDependency so local hooks exercise the released CLI, not only the in-repo source implementation.
-
-Common commands:
-
-- `yarn build`
-- `yarn start`
-- `yarn start:dev`
-- `yarn format`
-- `yarn format:check`
-- `yarn lint`
-- `yarn lint:check`
-- `yarn test`
-- `yarn test:cov`
-- `yarn type-check`
-- `yarn release`
-- `yarn specify-it:check`
-- `yarn commit-lint --edit .git/COMMIT_EDITMSG`
-
-Local hooks:
-
-- `pre-commit` runs `yarn specify-it:check`, `lint`, `format:check`, and `type-check`
-- `commit-msg` runs `commit-lint`
-
-## Source
-
-The project now separates the importable CLI module from the executable process entrypoint.
-
-- `yarn type-check` validates the source tree without emitting files
-- `yarn build` emits runnable output to `dist/`
-- `yarn start` runs the built output
-- `yarn start:dev` runs the source bin entrypoint directly during development
-- `src/cli.ts` exports the reusable CLI runner without process side effects
-- `src/bin.ts` is the dedicated executable entrypoint used by the npm `bin`
-- the published package exposes `specify-it/cli` as its current importable API surface
-- the CLI now uses `cac` as its command-line foundation
-- `yarn start -- --help` shows the current CLI help output
-- `yarn start -- init` bootstraps `.specs/` and `specify-it.config.json`
-- `yarn start -- init --bare` creates only the minimum structure
-- `yarn start -- init --format=json` changes the generated spec example format
-- `yarn start -- check` validates repository specs against the repository configuration
-- `yarn start -- check --json` prints machine-readable validation output for hooks, CI, and agents
-- `yarn start -- list` enumerates repository specs from the configured repository layout
-- `yarn start -- list --json` prints machine-readable spec inventory output
-- `yarn start -- print-config --json` prints the resolved repository configuration for tools and agents
-- `yarn start -- new --title="bootstrap release workflow"` creates a new Markdown spec scaffold from the repository configuration
-- `yarn start -- new --title="add config loader" --group=feat` creates a grouped Markdown spec scaffold when the repository config defines spec groups
-- Markdown structure validation is backed by `commonmark` so fenced examples do not create false-positive heading errors
-
-The first implemented CLI commands are `specify-it init`, `specify-it new`, `specify-it check`, `specify-it list`, and `specify-it print-config`.
-
-## Agent Skills
-
-`specify-it` now ships its first official agent-facing skill for assisted spec creation.
-
-- `skills/creating-specs-with-specify-it/` is an official portable skill for repositories that use `specify-it`
-- the skill reads the repository contract with `npx specify-it print-config --json`
-- the skill creates the scaffold with `npx specify-it new`
-- the skill treats `npx specify-it check` as final validation, not an every-edit loop
-- the first version is intentionally narrow and only covers creating a new spec draft
-
-For agents or environments without native skill support, use this fallback guidance in repository instructions such as `AGENTS.md`:
-
-```md
-## specify-it skill fallback
-
-When asked to create a new spec in this repository:
-
-- read the repository contract with `npx specify-it print-config --json`
-- create the spec scaffold with `npx specify-it new`
-- do not invent filenames or spec paths manually
-- draft the spec content inside the generated scaffold
-- run `npx specify-it check` before finishing when final validation is needed
-- if the check fails, fix the spec and run the check again
+```bash
+npm install -D specify-it
 ```
 
-## Config
+Initialize the repository:
 
-`specify-it init` generates a `specify-it.config.json` file that describes the repository spec contract.
+```bash
+npx specify-it init
+```
 
-This repository also commits its own `specify-it.config.json` so local hooks and manual validation use a stable deterministic config.
+Create a new spec:
+
+```bash
+npx specify-it new --title="add social login"
+```
+
+Validate the repository specs:
+
+```bash
+npx specify-it check
+```
+
+Inspect the resolved repository contract:
+
+```bash
+npx specify-it print-config --json
+```
+
+After `init`, your repository gets a deterministic contract through:
+
+- `specify-it.config.json`
+- a dedicated specs directory
+- a predictable section structure
+- validation rules that can run locally and in CI
+
+## How Specify It! Works
+
+Every repository that uses `specify-it` has a deterministic contract in `specify-it.config.json`.
+
+That contract defines:
+
+- where specs live
+- how spec files are named
+- which sections they must contain
+- whether groups are used
+- which validations apply during local development and CI
+
+The CLI enforces that contract.
+
+At a high level:
+
+- deterministic commands define and validate the repository rules
+- agent-facing skills consume those rules for assisted workflows
+
+This separation lets repositories keep a stable source of truth for structural rules while still enabling LLM-assisted authoring.
+
+## Core Commands
+
+### `specify-it init`
+
+Bootstraps `specify-it` in the current repository.
+
+```bash
+npx specify-it init
+```
+
+Useful variants:
+
+```bash
+npx specify-it init --bare
+npx specify-it init --format=json
+```
+
+`init` creates the repository contract and the initial specs structure.
+
+### `specify-it new`
+
+Creates a new spec scaffold from the repository configuration.
+
+```bash
+npx specify-it new --title="bootstrap release workflow"
+```
+
+If the repository uses spec groups:
+
+```bash
+npx specify-it new --title="add config loader" --group=feat
+```
+
+Key behavior:
+
+- `--title` is required
+- `specs.groups` is optional
+- when groups are configured, `--group` is required
+- the filename is always derived from the configured naming strategy
+
+### `specify-it check`
+
+Validates repository specs against `specify-it.config.json`.
+
+```bash
+npx specify-it check
+```
+
+Machine-readable output:
+
+```bash
+npx specify-it check --json
+```
+
+The checker validates:
+
+- repository layout
+- filename shape
+- file extension
+- Markdown section order and required sections
+- commit-aware repository rules when configured
+
+### `specify-it list`
+
+Lists known specs from the configured repository layout.
+
+```bash
+npx specify-it list
+```
+
+Machine-readable output:
+
+```bash
+npx specify-it list --json
+```
+
+This is useful for scripts, CI, and agent tooling that need spec inventory.
+
+### `specify-it print-config`
+
+Prints the resolved repository contract as JSON.
+
+```bash
+npx specify-it print-config --json
+```
+
+This command is designed for tools and agents that need a deterministic view of the repository rules without parsing multiple project files.
+
+## Configuration
+
+`specify-it init` generates a `specify-it.config.json` file that becomes the source of truth for the repository spec workflow.
 
 Example:
 
@@ -142,7 +223,7 @@ Example:
     "requireOrderedSections": true,
     "requireKnownExtension": true,
     "commitSpecs": {
-      "mode": "any",
+      "mode": "one",
       "maxChangedSpecs": 1,
       "requireLatest": true
     }
@@ -150,7 +231,7 @@ Example:
 }
 ```
 
-Grouped repositories may extend the config with an optional `specs.groups` list:
+Grouped repositories can add:
 
 ```json
 {
@@ -160,7 +241,22 @@ Grouped repositories may extend the config with an optional `specs.groups` list:
 }
 ```
 
-Field overview:
+### Naming strategies
+
+Supported `specs.naming` values:
+
+- `timestamp-slug`
+- `slug`
+- `sequence-slug`
+- `date-slug`
+- `datetime-slug`
+- `group-timestamp-slug`
+- `timestamp-group-slug`
+- `group-slug`
+
+Slug segments use ASCII `snake_case` across every naming strategy.
+
+### Configuration reference
 
 | path                                 | required | description                                                                                                                                                                                                                                   |
 | ------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -180,104 +276,39 @@ Field overview:
 | `checks.commitSpecs.maxChangedSpecs` | `false`  | optionally caps how many spec files may be changed in the current Git working set                                                                                                                                                             |
 | `checks.commitSpecs.requireLatest`   | `true`   | expresses whether a newly added spec in a commit must be the latest spec in its target specs directory by timestamp order                                                                                                                     |
 
-## New Specs
+## Agent Skills
 
-`specify-it new` scaffolds a new spec from the repository configuration.
+`specify-it` combines deterministic CLI commands with agent-facing skills.
 
-- the first version requires `--title`
-- the first version only scaffolds Markdown specs
-- the current version supports every configured `specs.naming` strategy
-- the command reads `specify-it.config.json` from the current repository root
-- `specs.groups` is optional
-- when `specs.groups` is not configured, the spec is created directly under `specs.root`
-- when `specs.groups` is configured, the command requires `--group` and validates it against the configured list
-- naming strategies that include `group` require `specs.groups` so the filename can embed the configured group value
+- commands define and enforce the repository contract
+- skills use that contract for assisted workflows
 
-Example:
+The first official skill currently shipped by the project is:
 
-```bash
-specify-it new --title="bootstrap release workflow"
-specify-it new --title="add config loader" --group=feat
-```
+- `skills/creating-specs-with-specify-it/`
 
-Generated filenames use ASCII `snake_case` for the slug segment, following the same style across every naming strategy.
+That skill is designed for repositories that already use `specify-it` and follows this workflow:
 
-For grouped repositories, `specs.groups` is expected to use this shape:
+1. run `npx specify-it print-config --json`
+2. read the repository contract
+3. create the spec with `npx specify-it new`
+4. draft the content inside the generated scaffold
+5. run `npx specify-it check` when final validation is needed
 
-```json
-{
-  "specs": {
-    "groups": ["feat", "fix", "docs", "chore"]
-  }
-}
-```
-
-## Check Specs
-
-`specify-it check` validates repository specs against `specify-it.config.json`.
-
-- the first version uses `specs.root`, `specs.groups`, and `checks.requireSpecsDirectory` to validate repository structure
-- the first version validates file extensions when `checks.requireKnownExtension` is enabled
-- the current version validates filenames for every configured `specs.naming` strategy
-- the first version validates Markdown title and section structure using `specs.sections.*` and `checks.requireOrderedSections`
-- grouped filename strategies also validate that the group embedded in the filename matches the configured group directory
-- the checker now also supports commit-aware validation through `checks.commitSpecs`
-- `checks.commitSpecs.mode` supports `none`, `one`, and `any` using local Git working tree changes
-- `checks.commitSpecs.maxChangedSpecs` optionally limits how many spec files may be changed at once
-- `checks.commitSpecs.requireLatest` validates that newly added `timestamp-slug` specs are the latest in their target directory
-- `--json` prints a JSON object with `ok`, `errors`, `checkedSpecs`, and `changedSpecs`
-- the reserved bootstrap example from `specs-it init` is ignored by commit-aware recency checks
-- the first version reports all discovered structural validation errors from the current run
-- the current version does not implement semantic code-to-spec comparison
-
-Example:
-
-```bash
-specify-it check
-```
-
-## List Specs
-
-`specify-it list` enumerates known specs from `specify-it.config.json`.
-
-- the first version uses `specs.root`, `specs.groups`, `specs.format`, and `specs.naming` to discover specs
-- the command supports text output and `--json`
-- grouped repositories include group metadata in the JSON result
-- invalid repository layout or invalid filename shape causes the command to fail clearly
-
-## Print Config
-
-`specify-it print-config --json` prints the resolved repository configuration from `specify-it.config.json`.
-
-- the first version only supports `--json`
-- the command returns the effective `specs`, `agents`, and `checks` sections
-- the command uses the same repository config file as the other deterministic commands
-- the command fails clearly when the config file is missing, malformed, or schema-invalid
-- this output is intended as the deterministic base layer for tools and agents
-
-Example:
-
-```bash
-specify-it print-config --json
-```
-
-- when `checks.requireSpecsDirectory` is `false` and the specs root is missing, the command returns an empty result
+For agents or environments without native skill support, a repository can mirror that same workflow in documents such as `AGENTS.md`.
 
 ## Release
 
-The repository is prepared for manual releases with `release-it`.
+The project uses `release-it` for package releases.
 
-- `yarn release` is the local release entrypoint.
-- `.release-it.json` defines the release strategy for Git tags, npm publishing, GitHub releases, and conventional changelog generation.
-- `.github/workflows/release.yml` defines a manual GitHub Actions release workflow with `patch`, `minor`, and `major` version increments.
-- the workflow uses the built-in `GITHUB_TOKEN` provided by GitHub Actions
-- the repository must define `NPM_TOKEN` as a GitHub Actions secret before npm publication can succeed
-- the workflow writes npm authentication explicitly into the npm config file used by the runner before running `release-it` so npm validation and publish steps share the same credentials
-- `release-it` skips its redundant npm preflight auth checks because the workflow already verifies npm authentication explicitly with `npm whoami`
-- `release-it` uses `--no-verify` on its automated version commit so local pre-commit hooks do not block mechanical release metadata updates
-- the package manifest pins npm publication to `https://registry.npmjs.org/` so releases do not inherit an unintended registry from the Yarn environment
+- `yarn release` is the local release entrypoint
+- `.release-it.json` defines Git tags, npm publication, GitHub releases, and changelog generation
+- `.github/workflows/release.yml` defines the manual GitHub Actions workflow for `patch`, `minor`, and `major` releases
+- the workflow verifies npm authentication explicitly with `npm whoami`
+- `release-it` uses `--no-verify` on automated version commits so mechanical release metadata updates do not get blocked by human-focused pre-commit checks
+- the package publishes to `https://registry.npmjs.org/`
 
-The release workflow runs these quality gates before creating a release:
+The release workflow runs:
 
 - `yarn format:check`
 - `yarn lint:check`
@@ -285,29 +316,26 @@ The release workflow runs these quality gates before creating a release:
 - `yarn test`
 - `yarn build`
 
-The package is prepared for public npm publication by:
+## Contributing
 
-- publishing built files from `dist/`
-- exposing `dist/cli.js` and `dist/cli.d.ts` through the `specify-it/cli` subpath export
-- exposing `dist/bin.js` as the dedicated CLI binary through the npm-compatible named `bin` manifest form
-- publishing `README.md` and `LICENSE` alongside the built output
+The repository follows a spec-first workflow for implementation work:
 
-## Tests
+1. create the relevant spec
+2. refine the spec until the design is aligned
+3. approve the spec
+4. implement the change
 
-Vitest is the current unit test runner for the project.
+Helpful project documents:
 
-- `yarn test` runs the unit test suite
-- `yarn test:cov` runs the suite with coverage enabled
+- `AGENTS.md` defines collaboration and spec-writing rules for contributors and coding agents
+- `IDEA.md` captures early-stage product direction and open questions
+- `.specs/` stores implementation-ready and approved specs
 
-## Workflow
+For local project development:
 
-Implementation work should follow this order:
-
-1. Create the relevant spec.
-2. Refine the spec until the design is aligned.
-3. Approve the spec.
-4. Implement the change.
-
-## Current Direction
-
-The initial focus is to define the project documentation foundation and then design the first version of the `specify-it` configuration model, CLI, checker behavior, and future skill contract around the `specify-it` package.
+- `yarn build` emits runnable output to `dist/`
+- `yarn start` runs the built CLI
+- `yarn start:dev` runs the source entrypoint directly
+- `yarn test` runs the Vitest suite
+- `yarn test:cov` runs the suite with coverage
+- `yarn specify-it:check` runs the released CLI against this repository

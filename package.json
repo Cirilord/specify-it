@@ -2,9 +2,27 @@
   "name": "specify-it",
   "version": "0.5.0",
   "description": "CLI and validation tooling for spec-driven workflows.",
+  "author": "Cirilord",
+  "homepage": "https://github.com/Cirilord/specify-it#readme",
+  "bugs": {
+    "url": "https://github.com/Cirilord/specify-it/issues"
+  },
   "license": "MIT",
   "type": "module",
   "packageManager": "yarn@1.22.22",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cirilord/specify-it.git"
+  },
+  "keywords": [
+    "specs",
+    "spec-driven-development",
+    "repository-tooling",
+    "cli",
+    "validation",
+    "agents",
+    "llm"
+  ],
   "exports": {
     "./cli": {
       "types": "./dist/cli.d.ts",
@@ -44,6 +62,11 @@
     "commit-lint": "commitlint",
     "type-check": "tsc --noEmit --project tsconfig.json"
   },
+  "dependencies": {
+    "cac": "^7.0.0",
+    "commonmark": "^0.31.2",
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
@@ -67,10 +90,5 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.48.1",
     "vitest": "^2.1.9"
-  },
-  "dependencies": {
-    "cac": "^7.0.0",
-    "commonmark": "^0.31.2",
-    "zod": "^3.25.76"
   }
 }
