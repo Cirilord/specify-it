@@ -1,8 +1,7 @@
+![Specify It!](./assets/banner.png)
+
 <div align="center">
   <h1>Specify It!</h1>
-  <img src="./assets/banner.png" alt="Specify It!" width="900" />
-  <br />
-  <br />
   <a href="https://www.npmjs.com/package/specify-it"><img src="https://img.shields.io/npm/v/specify-it.svg?style=flat" alt="npm version" /></a>
   <a href="https://github.com/Cirilord/specify-it/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license" /></a>
   <a href="https://github.com/Cirilord/specify-it/actions"><img src="https://img.shields.io/github/actions/workflow/status/Cirilord/specify-it/release.yml?branch=main" alt="GitHub Actions" /></a>
@@ -220,6 +219,7 @@ Example:
 
 ```json
 {
+  "$schema": "https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json",
   "specs": {
     "root": ".specs",
     "format": "md",
