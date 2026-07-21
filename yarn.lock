@@ -4179,10 +4179,10 @@ spdx-license-ids@^3.0.0:
   resolved "https://registry.yarnpkg.com/spdx-license-ids/-/spdx-license-ids-3.0.23.tgz#b069e687b1291a32f126893ed76a27a745ee2133"
   integrity sha512-CWLcCCH7VLu13TgOH+r8p1O/Znwhqv/dbb6lqWy67G+pT1kHmeD/+V36AVb/vq8QMIQwVShJ6Ssl5FPh0fuSdw==
 
-specify-it@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/specify-it/-/specify-it-0.6.0.tgz#1c85684efd012ffa689353817f55cffdcf41a3b4"
-  integrity sha512-LZvW8QlHX4GGfRVFAP/SQTSeEfQ23/1mrlff3uaucnwAhwkxjGvi+owpxj7Htl014kEkVJ6S//x3i9A6BTQZdg==
+specify-it@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/specify-it/-/specify-it-0.6.1.tgz#aadfbd0884a4832a8436f39bb19d2b4baccf5c92"
+  integrity sha512-UFPQYnaIPS7Ir3eAKObbQKKdvnjzHtJrum0zMeaMFUQwwubZUzfhTqrECCCdZKsFnhJ0f/yYUkyGyDIUxSFyUQ==
   dependencies:
     cac "^7.0.0"
     commonmark "^0.31.2"

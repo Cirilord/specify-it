@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json",
+  "$id": "https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json",
   "title": "Specify It Config",
   "type": "object",
   "additionalProperties": false,

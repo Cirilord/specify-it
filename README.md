@@ -206,14 +206,14 @@ Generated configs include:
 
 ```json
 {
-  "$schema": "https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json"
+  "$schema": "https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json"
 }
 ```
 
 The published schema lives at:
 
 ```text
-https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json
+https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json
 ```
 
 Example:

@@ -86,7 +86,7 @@
     "prettier": "^3.6.2",
     "release-it": "^19.0.4",
     "rimraf": "^6.0.1",
-    "specify-it": "^0.6.0",
+    "specify-it": "^0.6.1",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.48.1",

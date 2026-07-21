@@ -75,7 +75,7 @@ describe('InitCommand.run', (): void => {
       '.specs/00000000000000_initial_spec_example.md',
     ]);
     expect(config).toMatchObject({
-      $schema: 'https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json',
+      $schema: 'https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json',
       specs: {
         format: 'md',
         language: 'en',
@@ -118,7 +118,7 @@ describe('InitCommand.run', (): void => {
     );
 
     expect(config).toMatchObject({
-      $schema: 'https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json',
+      $schema: 'https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json',
       specs: {
         format: 'json',
         language: 'en',
