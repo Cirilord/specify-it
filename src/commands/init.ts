@@ -2,6 +2,8 @@ import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
+import packageJson from '../../package.json' with { type: 'json' };
+
 const DEFAULT_SPEC_LANGUAGE = 'en';
 const SUPPORTED_SPEC_FORMATS = ['md', 'json', 'html', 'xml'] as const;
 const SUPPORTED_SPEC_NAMINGS = [
@@ -15,6 +17,7 @@ const SUPPORTED_SPEC_NAMINGS = [
   'group-slug',
 ] as const;
 
+const CONFIG_SCHEMA_URL = `https://unpkg.com/specify-it@${packageJson.version}/schemas/specify-it.json`;
 const DEFAULT_SPEC_NAMING = SUPPORTED_SPEC_NAMINGS[0];
 
 type SpecFormat = (typeof SUPPORTED_SPEC_FORMATS)[number];
@@ -241,6 +244,7 @@ export class InitCommand {
   private createConfigContent(): string {
     return `${JSON.stringify(
       {
+        $schema: CONFIG_SCHEMA_URL,
         specs: {
           root: '.specs',
           format: this.format,

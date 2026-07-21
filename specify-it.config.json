@@ -1,4 +1,5 @@
 {
+  "$schema": "https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json",
   "specs": {
     "root": ".specs",
     "format": "md",

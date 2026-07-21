@@ -99,6 +99,8 @@ That contract defines:
 - whether groups are used
 - which validations apply during local development and CI
 
+Generated configs can include a `$schema` entry that points editors and tools to the published JSON Schema for the current package version.
+
 The CLI enforces that contract.
 
 At a high level:
@@ -199,6 +201,20 @@ This command is designed for tools and agents that need a deterministic view of 
 ## Configuration
 
 `specify-it init` generates a `specify-it.config.json` file that becomes the source of truth for the repository spec workflow.
+
+Generated configs include:
+
+```json
+{
+  "$schema": "https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json"
+}
+```
+
+The published schema lives at:
+
+```text
+https://unpkg.com/specify-it@0.6.0/schemas/specify-it.json
+```
 
 Example:
 
