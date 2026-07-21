@@ -1,6 +1,6 @@
 {
   "name": "specify-it",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "CLI and validation tooling for spec-driven workflows.",
   "author": "Cirilord",
   "homepage": "https://github.com/Cirilord/specify-it#readme",
