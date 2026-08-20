@@ -1112,6 +1112,188 @@ describe('CheckCommand.run', (): void => {
     });
   });
 
+  it('passes when multiple new specs form the latest timestamp block in their directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          maxChangedSpecs: 3,
+          mode: 'any',
+          requireLatest: true,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714213000_existing_spec.md'),
+      [
+        '# Existing Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714214000_new_spec_one.md'),
+      [
+        '# New Spec One',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(cwd, '.specs/20260714215000_new_spec_two.md'),
+      [
+        '# New Spec Two',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({ changedSpecs: 2, checkedSpecs: 3, errors: [] });
+  });
+
+  it('fails when multiple new specs do not form the latest timestamp block in their directory', async (): Promise<void> => {
+    const cwd = await createTempDirectory();
+    const command = CheckCommand.fromCliOptions({});
+    Reflect.set(command, 'cwd', cwd);
+
+    initializeGitRepository(cwd);
+    await mkdir(path.join(cwd, '.specs'), { recursive: true });
+    await writeConfig(cwd, {
+      checks: {
+        commitSpecs: {
+          maxChangedSpecs: 3,
+          mode: 'any',
+          requireLatest: true,
+        },
+        requireKnownExtension: true,
+        requireOrderedSections: true,
+        requireSpecsDirectory: true,
+      },
+      specs: {
+        format: 'md',
+        naming: 'timestamp-slug',
+        root: '.specs',
+        sections: {
+          optional: ['Examples'],
+          order: ['Title', 'Objective', 'Scope', 'Design', 'Examples', 'Acceptance Criteria'],
+          required: ['Objective', 'Scope', 'Design', 'Acceptance Criteria'],
+        },
+      },
+    });
+    await writeFile(
+      path.join(cwd, '.specs/20260714216000_existing_latest_spec.md'),
+      [
+        '# Existing Latest Spec',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    commitAll(cwd, 'chore(repo): bootstrap');
+    await writeFile(
+      path.join(cwd, '.specs/20260714214000_new_spec_one.md'),
+      [
+        '# New Spec One',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(cwd, '.specs/20260714215000_new_spec_two.md'),
+      [
+        '# New Spec Two',
+        '',
+        '## Objective',
+        '',
+        '## Scope',
+        '',
+        '## Design',
+        '',
+        '## Examples',
+        '',
+        '## Acceptance Criteria',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await expect(command.run()).resolves.toEqual({
+      changedSpecs: 2,
+      checkedSpecs: 3,
+      errors: [
+        'Specs are not the latest in their directory: .specs/20260714214000_new_spec_one.md, .specs/20260714215000_new_spec_two.md must form the newest timestamp-slug block in .specs.',
+      ],
+    });
+  });
+
   it('passes when a new grouped spec is the latest in its own directory', async (): Promise<void> => {
     const cwd = await createTempDirectory();
     const command = CheckCommand.fromCliOptions({});

@@ -325,21 +325,6 @@ export class CheckCommand {
     }
   }
 
-  private async getLatestTimestampInDirectory(
-    directoryPath: string,
-    format: SpecFormat
-  ): Promise<string | undefined> {
-    const entries = await readdir(directoryPath, { withFileTypes: true });
-    const timestamps = entries
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((fileName) => isRealTimestampSlugFileName(fileName, format))
-      .map((fileName) => this.getTimestampFromFileName(fileName))
-      .filter((timestamp): timestamp is string => timestamp !== undefined);
-
-    return timestamps.sort().at(-1);
-  }
-
   private getMarkdownHeadings(content: string): MarkdownHeading[] {
     const document = markdownParser.parse(content);
     const headings: MarkdownHeading[] = [];
@@ -380,6 +365,20 @@ export class CheckCommand {
     }
 
     return text;
+  }
+
+  private async getSortedTimestampsInDirectory(
+    directoryPath: string,
+    format: SpecFormat
+  ): Promise<string[]> {
+    const entries = await readdir(directoryPath, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((fileName) => isRealTimestampSlugFileName(fileName, format))
+      .map((fileName) => this.getTimestampFromFileName(fileName))
+      .filter((timestamp): timestamp is string => timestamp !== undefined)
+      .sort();
   }
 
   private getTimestampFromFileName(fileName: string): string | undefined {
@@ -544,27 +543,68 @@ export class CheckCommand {
     }
 
     const newSpecFiles = changedSpecFiles.filter((specFile) => specFile.isNew);
+    const newSpecFilesByDirectory = new Map<string, ChangedSpecFile[]>();
 
     for (const specFile of newSpecFiles) {
       if (!isRealTimestampSlugFileName(path.basename(specFile.absolutePath), config.specs.format)) {
         continue;
       }
 
-      const latestTimestamp = await this.getLatestTimestampInDirectory(
-        specFile.directoryPath,
+      const directorySpecFiles = newSpecFilesByDirectory.get(specFile.directoryPath) ?? [];
+      directorySpecFiles.push(specFile);
+      newSpecFilesByDirectory.set(specFile.directoryPath, directorySpecFiles);
+    }
+
+    for (const [directoryPath, directorySpecFiles] of newSpecFilesByDirectory.entries()) {
+      const newSpecFilesWithTimestamps = directorySpecFiles
+        .map((specFile) => ({
+          specFile,
+          timestamp: this.getTimestampFromFileName(path.basename(specFile.absolutePath)),
+        }))
+        .filter(
+          (
+            value
+          ): value is {
+            specFile: ChangedSpecFile;
+            timestamp: string;
+          } => value.timestamp !== undefined
+        )
+        .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+
+      if (newSpecFilesWithTimestamps.length === 0) {
+        continue;
+      }
+
+      const allTimestampsInDirectory = await this.getSortedTimestampsInDirectory(
+        directoryPath,
         config.specs.format
       );
-      const currentTimestamp = this.getTimestampFromFileName(path.basename(specFile.absolutePath));
+      const latestTimestampBlock = allTimestampsInDirectory.slice(
+        -newSpecFilesWithTimestamps.length
+      );
+      const newTimestamps = newSpecFilesWithTimestamps.map((value) => value.timestamp);
+      const isLatestBlock =
+        latestTimestampBlock.length === newTimestamps.length &&
+        latestTimestampBlock.every((timestamp, index) => timestamp === newTimestamps[index]);
 
-      if (
-        latestTimestamp !== undefined &&
-        currentTimestamp !== undefined &&
-        currentTimestamp < latestTimestamp
-      ) {
-        errors.push(
-          `Spec is not the latest in its directory: ${specFile.displayPath} must be the newest timestamp-slug spec in ${this.toDisplayPath(cwd, specFile.directoryPath)}.`
-        );
+      if (isLatestBlock) {
+        continue;
       }
+
+      if (newSpecFilesWithTimestamps.length === 1) {
+        errors.push(
+          `Spec is not the latest in its directory: ${newSpecFilesWithTimestamps[0]?.specFile.displayPath} must be the newest timestamp-slug spec in ${this.toDisplayPath(cwd, directoryPath)}.`
+        );
+        continue;
+      }
+
+      errors.push(
+        `Specs are not the latest in their directory: ${newSpecFilesWithTimestamps
+          .map((value) => value.specFile.displayPath)
+          .join(
+            ', '
+          )} must form the newest timestamp-slug block in ${this.toDisplayPath(cwd, directoryPath)}.`
+      );
     }
 
     return {
