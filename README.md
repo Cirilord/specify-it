@@ -205,21 +205,21 @@ Generated configs include:
 
 ```json
 {
-  "$schema": "https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json"
+  "$schema": "https://unpkg.com/specify-it@0.6.2/schemas/specify-it.json"
 }
 ```
 
 The published schema lives at:
 
 ```text
-https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json
+https://unpkg.com/specify-it@0.6.2/schemas/specify-it.json
 ```
 
 Example:
 
 ```json
 {
-  "$schema": "https://unpkg.com/specify-it@0.6.1/schemas/specify-it.json",
+  "$schema": "https://unpkg.com/specify-it@0.6.2/schemas/specify-it.json",
   "specs": {
     "root": ".specs",
     "format": "md",
